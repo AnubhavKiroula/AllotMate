@@ -89,3 +89,8 @@ A module is "done," not just "written," when:
 - Always check `/INSTRUCTIONS/03_ARCHITECTURE.md` module boundaries before suggesting cross-module calls (e.g., never suggest calling Python directly from C++).
 - Prefer extending via interfaces over modifying existing class signatures — flag it explicitly if a signature change seems necessary.
 - Never introduce a new external library/dependency without flagging it to the team first — check Section 1 of the Architecture doc for the agreed stack.
+
+## 6. Reference Diagrams
+
+For the UML class diagram, ER diagram, and phased roadmap visuals, see:
+**`00_PROJECT-OVERVIEW-AND-DIAGRAMS.md`**

@@ -55,6 +55,10 @@ A **stable-matching allocation engine** (Gale-Shapley algorithm, student-proposi
 - Both DS and OOP evaluators can independently identify their syllabus concepts clearly represented in the codebase.
 - Project is demoable live without crashing, with a clear before/after (FCFS vs stable matching) comparison.
 
+## 8. Reference Diagrams
+
+For the UML class diagram, ER diagram, SOLID principle mapping, and the full pitch script, see:
+**`00_PROJECT-OVERVIEW-AND-DIAGRAMS.md`**
 ---
 
 **Any team member or AI tool proposing a new feature must check it against Sections 5 and 6 before implementing it.**
