@@ -9,11 +9,24 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find PostgreSQL package
+# Find PostgreSQL (required for libpq)
 find_package(PostgreSQL REQUIRED)
 
-# Find libpqxx (first look for CMake config, then standard paths)
+# 1. Try finding libpqxx via CMake Config (e.g. vcpkg on Windows or distro CMake package)
 find_package(libpqxx CONFIG QUIET)
+
+# 2. Try finding via PkgConfig (standard on Linux / Ubuntu)
+if(NOT TARGET libpqxx::pqxx)
+    find_package(PkgConfig QUIET)
+    if(PKG_CONFIG_FOUND)
+        pkg_check_modules(PQXX QUIET IMPORTED_TARGET libpqxx)
+        if(TARGET PkgConfig::PQXX)
+            add_library(libpqxx::pqxx ALIAS PkgConfig::PQXX)
+        endif()
+    endif()
+endif()
+
+# 3. Fallback: manual path discovery
 if(NOT TARGET libpqxx::pqxx)
     find_path(LIBPQXX_INCLUDE_DIR pqxx/pqxx
         HINTS
@@ -25,6 +38,8 @@ if(NOT TARGET libpqxx::pqxx)
         HINTS
             ${PostgreSQL_LIBRARY_DIRS}
             /usr/lib
+            /usr/lib/x86_64-linux-gnu
+            /usr/lib/aarch64-linux-gnu
             /usr/local/lib
     )
     if(LIBPQXX_INCLUDE_DIR AND LIBPQXX_LIBRARY)

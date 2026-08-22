@@ -68,7 +68,7 @@ DbConfig DbConfig::fromEnv(const std::string& envFilePath) {
     return cfg;
 }
 
-PostgresConnection::PostgresConnection(const DbConfig& cfg) : config(cfg) {
+PostgresConnection::PostgresConnection(const DbConfig& cfg) : connection(nullptr), config(cfg) {
     try {
         std::string connStr = config.toConnectionString();
         connection = std::make_unique<pqxx::connection>(connStr);
