@@ -2,6 +2,10 @@
 #include <iomanip>
 #include "PostgresConnection.h"
 #include "AllocationException.h"
+#include "Student.h"
+#include "Coordinator.h"
+#include "Elective.h"
+#include "MatchingEngine.h"
 
 int main() {
     std::cout << "========================================" << std::endl;
@@ -58,6 +62,32 @@ int main() {
         std::cout << " -> Cleaned up test record." << std::endl;
 
         std::cout << "[4/4] Phase 1 Database Connection and CRUD verification completed successfully." << std::endl;
+
+        std::cout << "\n[5/5] Verifying Phase 2 domain models..." << std::endl;
+
+        Student student(1, "Test Student" , 9.5f);
+        Coordinator coordinator(1,"Test Coordinator" , "CSE");
+        Elective elective(1,"Data Structures", 50);
+
+        Person* studentProfile = &student;
+        Person* coordinatorProfile = &coordinator;
+
+        studentProfile->displayProfile();
+        coordinatorProfile->displayProfile();
+
+        if(elective.hasSeat()){
+            std::cout << "-> Elective seat availability check: PASS" << std::endl;
+        }
+        else{
+            std::cout << "-> Elective seat availability check: FAIL" << std::endl;
+        }
+
+        MatchingEngine engine;
+        engine.runGaleShapley();
+        std::cout << "-> MatchingEngine stub initialization: PASS" << std::endl;
+
+        std::cout << "-> Phase 2 domain model verification completed." << std::endl;
+
         return 0;
 
     } catch (const AllocationException::DatabaseException& e) {
