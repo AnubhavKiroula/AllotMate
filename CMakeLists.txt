@@ -55,6 +55,8 @@ add_executable(AllotMate
     src/main.cpp
     src/PostgresConnection.cpp
     src/Student.cpp
+    src/Coordinator.cpp
+    src/Elective.cpp
 )
 
 target_include_directories(AllotMate
