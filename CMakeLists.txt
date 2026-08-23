@@ -57,6 +57,7 @@ add_executable(AllotMate
     src/Student.cpp
     src/Coordinator.cpp
     src/Elective.cpp
+    src/MatchingEngine.cpp
 )
 
 target_include_directories(AllotMate
