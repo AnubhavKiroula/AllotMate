@@ -202,3 +202,25 @@ cmake --build build --config Release
 - [ ] **AVL Tree Integration with Elective:** Wire `AVLTree` waitlist directly into `Elective` class for dynamic seat promotion.
 - [ ] **Threaded BST Inorder Reporting:** Generate formatted fairness reports utilizing stack-less threaded traversal.
 - [ ] **OOP Evaluator Walkthrough:** Prepare comprehensive narrative on SOLID design (Liskov Substitution in `Person`, Dependency Inversion in `Repository`, Open/Closed in allocation strategy).
+
+---
+
+### 👤 Member 1: DS / Algorithm Lead
+**Focus:** Gale-Shapley Algorithm, `SparseMatrix`, `HashTable`, `Stack` (Backtracking), `PriorityQueue` & Fairness Verification.
+
+#### 🔹 Phase 1: Algorithm Skeleton & Interface Setup (20 Marks) — `COMPLETED`
+- [x] **MatchingEngine Skeleton:** Created `MatchingEngine` class header and implementation stubs (`include/MatchingEngine.h`, `src/MatchingEngine.cpp`).
+- [x] **Preference Validation Signatures:** Defined validation methods for student rank integrity and capacity bounds.
+- [x] **Data Structure Interface Alignment:** Agreed on data structure contracts without relying on standard STL shortcuts.
+
+#### 🔹 Phase 2: Core Data Structures & Gale-Shapley Loop (30 Marks) — `IN PROGRESS`
+- [ ] **Custom `SparseMatrix` Implementation:** Implement triplet-based (`row, col, rank`) sparse matrix for compressed preference storage.
+- [ ] **Custom `HashTable<K, V>` Implementation:** Build chaining/probing hash table for O(1) student and elective index lookups.
+- [ ] **Custom `Stack<Student>` Backtracking:** Implement custom dynamic stack for unmatched student proposals.
+- [ ] **Custom `PriorityQueue<Student>`:** Implement binary heap with sift-up/sift-down for elective preference ordering.
+- [ ] **Gale–Shapley Allocation Loop:** Implement student-proposing stable matching loop handling seat capacity and unallocated states.
+
+#### 🔹 Phase 3: Blocking-Pair Detection & FCFS Benchmark (50 Marks) — `UPCOMING`
+- [ ] **Mathematical Fairness Proof Engine:** Implement `detectBlockingPairs()` reporting 0 blocking pairs on valid runs.
+- [ ] **FCFS vs. Stable Matching Benchmark:** Build side-by-side comparison demo showing blocking pairs in FCFS vs. 0 in AllotMate on identical data.
+- [ ] **DS Evaluator Walkthrough:** Rehearse mathematical stability proof and custom data structure complexity analysis.
