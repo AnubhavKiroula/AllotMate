@@ -224,3 +224,24 @@ cmake --build build --config Release
 - [ ] **Mathematical Fairness Proof Engine:** Implement `detectBlockingPairs()` reporting 0 blocking pairs on valid runs.
 - [ ] **FCFS vs. Stable Matching Benchmark:** Build side-by-side comparison demo showing blocking pairs in FCFS vs. 0 in AllotMate on identical data.
 - [ ] **DS Evaluator Walkthrough:** Rehearse mathematical stability proof and custom data structure complexity analysis.
+
+---
+
+### 👤 Member 4: Integration, Testing, Docs & ML
+**Focus:** CLI Menu Flows, Unit Testing Harness, Benchmarks, Documentation & Isolated ML Microservice.
+
+#### 🔹 Phase 1: Project Docs, Workflow & CLI Design (20 Marks) — `COMPLETED`
+- [x] **Documentation System:** Co-authored PRD, SRS, UI/UX, Architecture, and Version Control documentation in `/docs`.
+- [x] **CLI Menu Specifications:** Defined numbered menu flows for coordinator and student roles (`docs/04_UIUX.md`).
+- [x] **Git Workflow Adherence:** Established PR Markdown templates and branch conventions.
+
+#### 🔹 Phase 2: CLI Implementation & Test Harness (30 Marks) — `IN PROGRESS`
+- [ ] **CLI Admin Tool:** Implement interactive terminal interface covering main menu states (Import, Set Capacities, Run Allocation, View Results, View Waitlist).
+- [ ] **Automated CTest Suite:** Scaffold CTest unit testing framework integrated with CMake.
+- [ ] **Isolated ML Microservice Scaffold:** Set up Python FastAPI microservice under `/ml-service` with its own Dockerfile and `requirements.txt`.
+- [ ] **Demand Forecasting Model:** Implement regression/random-forest demand forecasting endpoint (`POST /forecast/demand`).
+
+#### 🔹 Phase 3: End-to-End System Testing & Demo Polish (50 Marks) — `UPCOMING`
+- [ ] **Collusion Detection Endpoint:** Implement clustering algorithm (`POST /forecast/collusion-check`) flagging suspicious identical preference patterns.
+- [ ] **System-Wide Load Testing:** Run end-to-end load tests on 1,500 students × 30 electives; log runtime statistics.
+- [ ] **Full Team Demo Rehearsal:** Coordinate live presentation flow, backup output recording, and panel Q&A preparation.
