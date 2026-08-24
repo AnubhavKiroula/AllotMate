@@ -85,3 +85,53 @@ The system persistence is backed by PostgreSQL 16 across 7 relational entities (
 - **B-tree Index on `STUDENT(roll_no)`**: O(log N) fast lookup during individual student queries and duplicate check.
 - **Composite Index on `PREFERENCE(student_id, rank)`**: Instant O(1)/O(log N) retrieval of student preference order during Gale-Shapley proposal rounds.
 - **Index on `ALLOTMENT(elective_id)`**: Rapid capacity enforcement and elective seat lookups at 1,500-student scale.
+
+---
+
+## 🚀 Quickstart & Setup Guide
+
+### 1. Prerequisites
+- **Docker Desktop** (running)
+- **C++17 Compiler** (GCC 9+, Clang 10+, or MSVC 2019+)
+- **CMake 3.16+**
+- **pgAdmin 4** (optional, for visual inspection)
+
+### 2. Environment Configuration
+Copy the template configuration file:
+```bash
+cp .env.example .env
+```
+Ensure `.env` contains:
+```ini
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=allotmate
+DB_USER=postgres
+DB_PASSWORD=postgres
+```
+
+### 3. Start PostgreSQL Database
+```bash
+docker compose up -d
+```
+*Automatically brings up PostgreSQL 16 on port `5433`, runs `sql/01_init_schema.sql`, and seeds 100 students and electives from `sql/02_seed_data.sql`.*
+
+### 4. Build and Run C++ Core
+```bash
+# Configure build with CMake
+cmake -B build -S .
+
+# Compile executable
+cmake --build build --config Release
+
+# Run verification test
+./build/AllotMate        # On Linux / macOS
+.\build\Debug\AllotMate.exe  # On Windows
+```
+
+### 5. Inspect Data via CLI / pgAdmin
+- **Direct Terminal SQL:**
+  ```bash
+  docker exec -it allotmate_postgres psql -U postgres -d allotmate
+  ```
+- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, Username/Password `postgres`.
