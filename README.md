@@ -245,3 +245,62 @@ cmake --build build --config Release
 - [ ] **Collusion Detection Endpoint:** Implement clustering algorithm (`POST /forecast/collusion-check`) flagging suspicious identical preference patterns.
 - [ ] **System-Wide Load Testing:** Run end-to-end load tests on 1,500 students × 30 electives; log runtime statistics.
 - [ ] **Full Team Demo Rehearsal:** Coordinate live presentation flow, backup output recording, and panel Q&A preparation.
+
+---
+
+## 📂 Project Directory Structure
+
+```text
+AllotMate/
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # Automated CI build gate (-Wall -Wextra -Werror)
+├── docs/                        # Complete PBL specification & design documents
+│   ├── 00_PROJECT-OVERVIEW-AND-DIAGRAMS.md
+│   ├── 01_PRD.md
+│   ├── 02_SRS.md
+│   ├── 03_ARCHITECTURE.md
+│   ├── 04_UIUX.md
+│   ├── 05_DEVELOPMENT.md
+│   ├── 06_VERSION-CONTROL.md
+│   └── DB-SETUP.md              # Database & pgAdmin setup guide
+├── include/                     # C++ header files & interfaces
+│   ├── AllocationException.h    # Custom domain & database exception hierarchy
+│   ├── Coordinator.h            # Academic coordinator domain model
+│   ├── Elective.h               # Elective course domain model
+│   ├── MatchingEngine.h         # Gale-Shapley stable matching engine
+│   ├── Person.h                 # Abstract base class
+│   ├── PostgresConnection.h     # RAII PostgreSQL client wrapper
+│   ├── Repository.h             # Generic Repository<T> template interface
+│   └── Student.h                # Student domain model
+├── sql/                         # Database migrations and seed datasets
+│   ├── 01_init_schema.sql       # 7-table DDL, constraints & indexes
+│   └── 02_seed_data.sql         # 100-student realistic seed script
+├── src/                         # C++ implementation source files
+│   ├── Coordinator.cpp
+│   ├── Elective.cpp
+│   ├── MatchingEngine.cpp
+│   ├── PostgresConnection.cpp
+│   ├── Student.cpp
+│   └── main.cpp                 # Main verification test / CLI entrypoint
+├── .env.example                 # Environment configuration template
+├── .gitignore                   # Git ignore rules
+├── CMakeLists.txt               # CMake build configuration
+├── docker-compose.yml           # PostgreSQL 16 container definition
+├── LICENSE                      # MIT License
+└── README.md                    # Root project overview & task tracker
+```
+
+---
+
+## 🛡️ Development & Version Control Standards
+
+- **SOLID Principles:** Single responsibility per module, open for extension via interfaces (`Repository<T>`), Liskov substitutability on `Person`, and dependency inversion.
+- **Fail Loud & RAII:** No silent errors or manual memory/connection cleanup. All failures throw `AllocationException` subclasses.
+- **Conventional Commits:** All team commits follow `<type>: <description>` format (`feat`, `fix`, `docs`, `build`, `ci`, `refactor`, `test`).
+- **Branch-per-Feature:** Code lands via PRs into `main`/`dev` with automated CI verification.
+
+---
+
+## 📄 License
+This project is licensed under the [MIT License](LICENSE) — built for academic Data Structures & Object-Oriented Programming PBL evaluation.
