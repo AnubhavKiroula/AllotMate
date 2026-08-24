@@ -178,3 +178,27 @@ cmake --build build --config Release
 - [ ] **CLI Reporting Queries:** Build SQL query layer for CLI "View allotment results" and "View waitlist" screens.
 - [ ] **Index Performance Profiling:** Execute `EXPLAIN ANALYZE` on core matching queries to verify 100% index utilization at 1,500 scale.
 - [ ] **Live Evaluation Demo Prep:** Rehearse live pgAdmin schema walkthrough, live query demonstrations, and audit log inspection for evaluators.
+
+---
+
+### 👤 Member 2: OOP Architect
+**Focus:** Class Hierarchy, Polymorphism, Operator Overloading, Exception Hierarchy, `AVLTree` & `ThreadedBST`.
+
+#### 🔹 Phase 1: Domain Models & Core Interfaces (20 Marks) — `COMPLETED`
+- [x] **Abstract Base Class `Person`:** Defined pure virtual `displayProfile()`, protected ID/name, and virtual destructor (`include/Person.h`).
+- [x] **Exception Hierarchy:** Implemented full `AllocationException` base class and sub-exceptions (`SeatOverflowException`, `InvalidPreferenceException`, `AlreadyAllottedException`, `DatabaseException`) in `include/AllocationException.h`.
+- [x] **Generic Repository Interface:** Defined template `Repository<T>` with `save()`, `findById()`, and `findAll()` (`include/Repository.h`).
+- [x] **Domain Entity Classes:** Implemented `Student` (`include/Student.h`, `src/Student.cpp`), `Coordinator` (`include/Coordinator.h`, `src/Coordinator.cpp`), and `Elective` (`include/Elective.h`, `src/Elective.cpp`).
+- [x] **Operator Overloading Baseline:** Implemented `operator<` and `operator==` for `Student` (CGPA tie-break) and `Elective`.
+
+#### 🔹 Phase 2: Waitlist Data Structures & Operator Logic (30 Marks) — `IN PROGRESS`
+- [ ] **Template `AVLTree<T>` Implementation:** Build self-balancing AVL Tree for priority waitlist management with LL, RR, LR, RL rotations.
+- [ ] **Template `ThreadedBST<T>` Implementation:** Implement threaded binary search tree enabling stack-less inorder traversal for reporting.
+- [ ] **Polymorphic Profile Display:** Implement full polymorphic rendering in `Student::displayProfile()` and `Coordinator::displayProfile()`.
+- [ ] **Model Unit Tests:** Write isolated unit tests for `Student`, `Elective`, and `Coordinator` methods under edge case conditions.
+- [ ] **Copy & Move Semantics:** Implement rule of 5 (copy/move constructors and assignment operators) for custom tree structures.
+
+#### 🔹 Phase 3: Waitlist Sync, Optimization & OOP Viva Rehearsal (50 Marks) — `UPCOMING`
+- [ ] **AVL Tree Integration with Elective:** Wire `AVLTree` waitlist directly into `Elective` class for dynamic seat promotion.
+- [ ] **Threaded BST Inorder Reporting:** Generate formatted fairness reports utilizing stack-less threaded traversal.
+- [ ] **OOP Evaluator Walkthrough:** Prepare comprehensive narrative on SOLID design (Liskov Substitution in `Person`, Dependency Inversion in `Repository`, Open/Closed in allocation strategy).
