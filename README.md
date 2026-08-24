@@ -66,3 +66,22 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 | **Domain Models & Trees** | **Member 2** (OOP Architect) | AVL Tree, Threaded BST, Hashing | Inheritance, Polymorphism, Operator Overloading | **OOP Evaluator** |
 | **Persistence & DB Layer** | **Member 3 (Anubhav Kiroula)** | Sorting (bulk import), Indexing structures | RAII, Repository Pattern (`Repository<T>`), Connection Pool | **Joint Evaluator** |
 | **Integration, Testing & ML** | **Member 4** (Integration / ML) | Graph/Cluster analysis (collusion check) | Unit testing, Microservice REST isolation | **Panel Review** |
+
+---
+
+## 🗄️ Database Schema & Relational Design
+
+The system persistence is backed by PostgreSQL 16 across 7 relational entities (DDL in [`sql/01_init_schema.sql`](sql/01_init_schema.sql)):
+
+1. **`STUDENT`**: Stores student profiles, unique roll numbers, branches, and CGPA with constraints.
+2. **`ELECTIVE`**: Defines course names, semester, seat capacities, and filled seat counts.
+3. **`PREFERENCE`**: Ranked student choices with `UNIQUE(student_id, elective_id)` & `UNIQUE(student_id, rank)` to prevent duplicate preference submissions.
+4. **`ALLOTMENT`**: Final allocation records per student and round with `UNIQUE(student_id, round)`.
+5. **`WAITLIST`**: Ranked waitlist positions per elective backed by `UNIQUE(elective_id, position)`.
+6. **`COORDINATOR`**: Academic coordinator profiles with department and bcrypt-hashed credentials.
+7. **`RUN_LOG`**: Immutable audit logs of every Gale-Shapley matching run, tracking timestamps, coordinator ID, blocking pairs detected, and outcome summaries.
+
+### Performance Indexing Strategy
+- **B-tree Index on `STUDENT(roll_no)`**: O(log N) fast lookup during individual student queries and duplicate check.
+- **Composite Index on `PREFERENCE(student_id, rank)`**: Instant O(1)/O(log N) retrieval of student preference order during Gale-Shapley proposal rounds.
+- **Index on `ALLOTMENT(elective_id)`**: Rapid capacity enforcement and elective seat lookups at 1,500-student scale.
