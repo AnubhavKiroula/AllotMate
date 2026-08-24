@@ -29,3 +29,29 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 - [`05_DEVELOPMENT.md`](docs/05_DEVELOPMENT.md) — Development Phases, SOLID Rules & Definition of Done
 - [`06_VERSION-CONTROL.md`](docs/06_VERSION-CONTROL.md) — Conventional Commits, Branching Strategy & PR Guidelines
 - [`DB-SETUP.md`](docs/DB-SETUP.md) — Database Quickstart & pgAdmin Setup Guide
+
+---
+
+## ⚡ Key Highlights & Core Features
+
+1. **Provable Fairness via Gale–Shapley Matching:** Guaranteed stable matching with zero blocking pairs. Includes an automated mathematical fairness checker after every run.
+2. **Custom Syllabus Data Structures:** Custom implementations of `SparseMatrix`, `HashTable`, `PriorityQueue`, `AVLTree`, `ThreadedBST`, and `Stack` rather than generic standard library shortcuts.
+3. **Strict SOLID & DRY OOP Design:** Abstract base class `Person` with derived `Student` & `Coordinator`, repository pattern (`Repository<T>`), RAII resource wrappers, and custom exception hierarchy.
+4. **PostgreSQL Relational Persistence:** Direct SQL via `libpqxx` (no heavy ORM overhead), custom connection pooling, B-tree/composite indexes, and containerized Docker setup.
+5. **Bulk CSV Ingestion at Scale:** Validated data ingestion supporting 1,500+ records with duplicate roll-number detection.
+6. **Automated CI/CD Quality Gate:** GitHub Actions workflow ensuring `-Wall -Wextra -Werror` zero-warning compilation on all branches.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology | Role & Purpose |
+|---|---|---|
+| **Core Language** | C++17 | Algorithmic matching, domain entities, and data structures |
+| **Database** | PostgreSQL 16 | Relational persistence, constraints, and composite indexes |
+| **Database Connector** | `libpqxx` (C++ client) | Native, low-overhead SQL execution without ORM |
+| **Containerization** | Docker & Docker Compose | Containerized database environment across all machines |
+| **Build System** | CMake 3.16+ | Multi-platform build and compiler warning gates |
+| **CI / Quality Gate** | GitHub Actions | Automated build verification on `main` and `dev` |
+| **DB Inspection GUI** | pgAdmin 4 | Visual table inspection and query evaluation |
+| **ML Microservice (Optional)** | Python (FastAPI / scikit-learn) | Isolated elective demand forecasting & collusion detection |
