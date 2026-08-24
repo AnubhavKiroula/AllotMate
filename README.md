@@ -135,3 +135,46 @@ cmake --build build --config Release
   docker exec -it allotmate_postgres psql -U postgres -d allotmate
   ```
 - **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, Username/Password `postgres`.
+
+---
+
+## 📋 Comprehensive 3-Phase Team Task Tracker
+
+> **Evaluation Schedule:**
+> - **Phase 1 Evaluation:** 20 Marks *(September 5th)*
+> - **Phase 2 Evaluation:** 30 Marks *(Mid-Semester)*
+> - **Phase 3 Evaluation:** 50 Marks *(End-Semester Final PBL Viva)*
+
+---
+
+### 👤 Member 3: Backend & Database Engineer (Anubhav Kiroula)
+**Focus:** PostgreSQL Schema, Libpqxx Integration, Repository Layer, Bulk CSV Import at Scale & CI/CD Pipeline.
+
+#### 🔹 Phase 1: Schema Design, Docker & CI/CD Pipeline (20 Marks) — `COMPLETED`
+- [x] **CI/CD Build Pipeline:** Created `.github/workflows/ci.yml` compiling with `-Wall -Wextra -Werror` on PRs and pushes to `main`/`dev`.
+- [x] **Dockerized PostgreSQL 16:** Created `docker-compose.yml` with named volume persistence (`pgdata`) and auto-init SQL execution.
+- [x] **Complete Relational Schema DDL:** Implemented `sql/01_init_schema.sql` covering all 7 ER diagram entities (`STUDENT`, `ELECTIVE`, `PREFERENCE`, `ALLOTMENT`, `WAITLIST`, `COORDINATOR`, `RUN_LOG`) with explicit PK/FK cascading rules and uniqueness constraints.
+- [x] **Indexing Architecture:** Implemented B-tree index on `STUDENT(roll_no)`, composite index on `PREFERENCE(student_id, rank)`, and index on `ALLOTMENT(elective_id)`.
+- [x] **Realistic Dummy Dataset:** Created `sql/02_seed_data.sql` seeding 100 students across 4 branches, 6 electives, 400 preferences, and coordinator logins with bcrypt hashes.
+- [x] **RAII Database Client Wrapper:** Implemented `PostgresConnection` class (`include/PostgresConnection.h`, `src/PostgresConnection.cpp`) with transaction management, RAII lifecycle, and automatic `.env` config loader.
+- [x] **Custom Exception Integration:** Added `AllocationException::DatabaseException` to encapsulate DB failure states without silent errors.
+- [x] **End-to-End CRUD Verification Demo:** Implemented student insert, query, readback, and cleanup cycle in `src/main.cpp`.
+- [x] **Team Setup Documentation:** Authored `docs/DB-SETUP.md` with step-by-step instructions for Docker, pgAdmin, and environment variables.
+
+#### 🔹 Phase 2: Repository Layer, Bulk Import & Isolation Tests (30 Marks) — `IN PROGRESS`
+- [ ] **`PostgresStudentRepo` Implementation:** Implement concrete repository fulfilling `Repository<Student>` interface.
+- [ ] **`PostgresElectiveRepo` Implementation:** Implement concrete repository fulfilling `Repository<Elective>` interface.
+- [ ] **High-Performance Bulk CSV Ingestion:** Ingest 1,500 student records with row-level validation and duplicate roll-number rejection.
+- [ ] **`RUN_LOG` Execution Auditing:** Implement automated run logging storing timestamps, coordinator ID, blocking pairs detected, and outcome summaries.
+- [ ] **Connection Pooling / Reuse:** Implement lightweight RAII connection reuse to avoid per-query TCP connection overhead.
+- [ ] **Isolated Repository Unit Tests:** Write unit tests for repository methods with transactional rollback to protect seed data.
+- [ ] **Zero-Warning Code Quality:** Verify all database layer code compiles cleanly under `-Wall -Wextra -Werror`.
+
+#### 🔹 Phase 3: Integration, 1,500-Scale Testing & Demo Readiness (50 Marks) — `UPCOMING`
+- [ ] **MatchingEngine Wire-Up:** Support full end-to-end integration between `MatchingEngine` and repository layer.
+- [ ] **1,500-Student Scale Benchmarking:** Scale-test bulk import and database query throughput at 1,500 scale; record execution benchmarks.
+- [ ] **Waitlist Persistence Sync:** Implement database persistence for waitlists matching Member 2's AVL Tree / Threaded BST in-memory structures.
+- [ ] **Concurrency & Re-run Safety:** Implement DB-level locking/versioning preventing duplicate simultaneous runs and handling capacity changes post-run (SRS edge case #7).
+- [ ] **CLI Reporting Queries:** Build SQL query layer for CLI "View allotment results" and "View waitlist" screens.
+- [ ] **Index Performance Profiling:** Execute `EXPLAIN ANALYZE` on core matching queries to verify 100% index utilization at 1,500 scale.
+- [ ] **Live Evaluation Demo Prep:** Rehearse live pgAdmin schema walkthrough, live query demonstrations, and audit log inspection for evaluators.
