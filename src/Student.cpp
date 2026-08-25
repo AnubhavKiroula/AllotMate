@@ -10,12 +10,12 @@ Student::Student(int id, const string& name, float cgpa)
     this->name = name;
 }
 
-void Student::addPerference(int electiveID){
+void Student::addPreference(int electiveID){
     preferenceList.push_back(electiveID);
 }
 
 void Student::displayProfile(){
-    cout << "Studnet ID: " << id << endl;
+    cout << "Student ID: " << id << endl;
     cout << "Name :" << name << endl;
     cout << "CGPA : " << cgpa << endl;
 }
