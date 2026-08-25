@@ -18,7 +18,7 @@ class Student : public Person{
     public:
         Student(int id, const string& name, float cgpa);
 
-        void addPerference(int electiveId);
+        void addPreference(int electiveId);
 
         void displayProfile() override;
 
