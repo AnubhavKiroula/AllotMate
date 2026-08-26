@@ -28,3 +28,11 @@ const string& Elective::getName() const{
 int Elective::getCapacity() const {
     return capacity;
 }
+
+bool Elective::operator<(const Elective& other) const {
+    return capacity < other.capacity;
+}
+
+bool Elective::operator==(const Elective& other) const {
+    return id == other.id;
+}
