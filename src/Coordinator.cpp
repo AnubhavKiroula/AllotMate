@@ -15,7 +15,8 @@ Coordinator::Coordinator(
 }
 
 void Coordinator::approveAllocation(Elective& elective){
-    (void)elective;
+    cout << "Coordinator " << name << " approved allocation for elective: "
+         << elective.getName() << endl;
 }
 
 void Coordinator::displayProfile(){
