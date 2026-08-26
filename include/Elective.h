@@ -19,4 +19,6 @@ class Elective{
         const string& getName() const;
         int getCapacity() const;
         
+        bool operator<(const Elective& other) const;
+        bool operator==(const Elective& other) const;
 };

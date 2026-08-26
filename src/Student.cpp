@@ -19,9 +19,13 @@ void Student::displayProfile(){
     cout << "Name :" << name << endl;
     cout << "CGPA : " << cgpa << endl;
 }
-
 bool Student::operator<(const Student& other) const {
-    return cgpa < other.cgpa;
+    // Convention used here: lower id gets priority (treated as "less than"
+    // in merit ordering). Flag with team if the opposite direction is intended.
+    if (cgpa != other.cgpa) {
+        return cgpa < other.cgpa;
+    }
+    return id < other.id;
 }
 
 bool Student::operator==(const Student& other) const {
