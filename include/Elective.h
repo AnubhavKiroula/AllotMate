@@ -9,6 +9,7 @@ class Elective{
         int id;
         string name;
         int capacity;
+        int seatsFilled=0;
 
     public:
         Elective(int id, const string& name, int capacity);
@@ -21,4 +22,5 @@ class Elective{
         
         bool operator<(const Elective& other) const;
         bool operator==(const Elective& other) const;
+        void allocateSeat();
 };
