@@ -1,4 +1,5 @@
 #include "Student.h"
+#include "AllocationException.h"
 #include <iostream>
 
 using namespace std;
@@ -11,6 +12,13 @@ Student::Student(int id, const string& name, float cgpa)
 }
 
 void Student::addPreference(int electiveID){
+    for (int existingId : preferenceList) {
+        if (existingId == electiveID) {
+            throw AllocationException::InvalidPreferenceException(
+                "Duplicate elective preference: elective ID already ranked."
+            );
+        }
+    }
     preferenceList.push_back(electiveID);
 }
 

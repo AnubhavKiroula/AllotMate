@@ -1,4 +1,5 @@
 #include "Elective.h"
+#include "AllocationException.h"
 using namespace std;
 
 
@@ -12,10 +13,19 @@ Elective::Elective(
       capacity(capacity){
 
       }
+void Elective::allocateSeat() {
+    if (seatsFilled >= capacity) {
+        throw AllocationException::SeatOverflowException(
+            "Cannot allocate seat: elective is at full capacity."
+        );
+    }
+    seatsFilled++;
+}
 
 bool Elective::hasSeat() const {
-    return capacity > 0;
+    return seatsFilled < capacity;
 }
+
 
 int Elective::getId() const {
     return id;
