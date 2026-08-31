@@ -23,7 +23,7 @@ void Student::addPreference(int electiveID){
 }
 
 void Student::displayProfile(){
-    cout << "Studnet ID: " << id << endl;
+    cout << "Student ID: " << id << endl;
     cout << "Name :" << name << endl;
     cout << "CGPA : " << cgpa << endl;
 }
