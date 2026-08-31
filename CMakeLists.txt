@@ -53,6 +53,7 @@ endif()
 
 add_executable(AllotMate
     src/main.cpp
+    src/CLI.cpp
     src/PostgresConnection.cpp
     src/Student.cpp
     src/Coordinator.cpp
