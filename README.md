@@ -90,6 +90,20 @@ The system persistence is backed by PostgreSQL 16 across 7 relational entities (
 
 ## 🚀 Quickstart & Setup Guide
 
+> 💡 **For Evaluation Demo (September 5th):**  
+> Run these 3 simple commands in order in your terminal:
+> ```bash
+> # 1. Start PostgreSQL 16 DB (seeds 100 students & 6 electives)
+> docker compose up -d
+> 
+> # 2. Build C++ Engine
+> cmake -B build -S . && cmake --build build
+> 
+> # 3. Launch Interactive CLI
+> ./build/AllotMate            # On Linux / WSL
+> .\build\Debug\AllotMate.exe  # On Windows
+> ```
+
 ### 1. Prerequisites
 - **Docker Desktop** (running)
 - **C++17 Compiler** (GCC 9+, Clang 10+, or MSVC 2019+)
@@ -125,7 +139,7 @@ cmake -B build -S .
 cmake --build build --config Release
 
 # Launch the AllotMate interactive CLI
-./build/AllotMate            # On Linux / macOS
+./build/AllotMate            # On Linux / macOS / WSL
 .\build\Debug\AllotMate.exe  # On Windows
 ```
 The program will launch an interactive terminal menu. Choose `[1] Coordinator` to access the full admin menu, or `[2] Student` for status lookup. Press `[0]` from the coordinator menu to enter **Evaluator Mode** for live OOP and DS concept demonstrations.
