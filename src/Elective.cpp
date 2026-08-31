@@ -39,6 +39,10 @@ int Elective::getCapacity() const {
     return capacity;
 }
 
+int Elective::getSeatsFilled() const {
+    return seatsFilled;
+}
+
 bool Elective::operator<(const Elective& other) const {
     return capacity < other.capacity;
 }

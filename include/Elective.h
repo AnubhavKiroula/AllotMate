@@ -19,6 +19,7 @@ class Elective{
         int getId() const;
         const string& getName() const;
         int getCapacity() const;
+        int getSeatsFilled() const;
         
         bool operator<(const Elective& other) const;
         bool operator==(const Elective& other) const;
