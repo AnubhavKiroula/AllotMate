@@ -71,6 +71,10 @@ if(TARGET libpqxx::pqxx)
     target_link_libraries(AllotMate PRIVATE libpqxx::pqxx)
 elseif(LIBPQXX_LIBRARY)
     target_link_libraries(AllotMate PRIVATE ${LIBPQXX_LIBRARY})
+else()
+    # Final fallback: direct link for apt-installed libpqxx on Ubuntu/Debian
+    # (no CMake config file is shipped with the apt package)
+    target_link_libraries(AllotMate PRIVATE pqxx pq)
 endif()
 
 if(TARGET PostgreSQL::PostgreSQL)
