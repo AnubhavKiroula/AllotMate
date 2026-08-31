@@ -116,7 +116,7 @@ docker compose up -d
 ```
 *Automatically brings up PostgreSQL 16 on port `5433`, runs `sql/01_init_schema.sql`, and seeds 100 students and electives from `sql/02_seed_data.sql`.*
 
-### 4. Build and Run C++ Core
+### 4. Build and Run the Interactive CLI
 ```bash
 # Configure build with CMake
 cmake -B build -S .
@@ -124,10 +124,11 @@ cmake -B build -S .
 # Compile executable
 cmake --build build --config Release
 
-# Run verification test
-./build/AllotMate        # On Linux / macOS
+# Launch the AllotMate interactive CLI
+./build/AllotMate            # On Linux / macOS
 .\build\Debug\AllotMate.exe  # On Windows
 ```
+The program will launch an interactive terminal menu. Choose `[1] Coordinator` to access the full admin menu, or `[2] Student` for status lookup. Press `[0]` from the coordinator menu to enter **Evaluator Mode** for live OOP and DS concept demonstrations.
 
 ### 5. Inspect Data via CLI / pgAdmin
 - **Direct Terminal SQL:**
