@@ -12,9 +12,9 @@
    - [Question 2: How will we do the remaining 75% of the work?](#question-2-how-will-we-do-the-remaining-75-of-the-work)
 3. [System Architecture & How Files Connect](#3-system-architecture--how-files-connect)
 4. [Member 3 (Anubhav Kiroula): Backend & Database Lead](#4-member-3-anubhav-kiroula-backend--database-lead)
-5. [Member 2: Object-Oriented Programming (OOP) Architect](#5-member-2-object-oriented-programming-oop-architect)
-6. [Member 1 (Dhruv): Data Structures & Algorithm Lead](#6-member-1-dhruv-data-structures--algorithm-lead)
-7. [Member 4: Integration, CLI & Build Lead](#7-member-4-integration-cli--build-lead)
+5. [Member 2(Kritika Mundepi): Object-Oriented Programming (OOP) Architect](#5-member-2-object-oriented-programming-oop-architect)
+6. [Member 1 (Dhruv Negi): Data Structures & Algorithm Lead](#6-member-1-dhruv-data-structures--algorithm-lead)
+7. [Member 4 (Gaurang Nauriyal): Integration, CLI ](#7-member-4-integration-cli)
 8. [Live Evaluation Demo Script (Step-by-Step)](#8-live-evaluation-demo-script-step-by-step)
 
 ---
