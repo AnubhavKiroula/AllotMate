@@ -28,6 +28,7 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 - [`04_UIUX.md`](docs/04_UIUX.md) — CLI Workflow & Evaluation Screens
 - [`05_DEVELOPMENT.md`](docs/05_DEVELOPMENT.md) — Development Phases, SOLID Rules & Definition of Done
 - [`06_VERSION-CONTROL.md`](docs/06_VERSION-CONTROL.md) — Conventional Commits, Branching Strategy & PR Guidelines
+- [`07_PHASE-1-EVALUATION-GUIDE.md`](docs/07_PHASE-1-EVALUATION-GUIDE.md) — Phase 1 Evaluation Guide, Member Role Manual & Viva Q&A
 - [`DB-SETUP.md`](docs/DB-SETUP.md) — Database Quickstart & pgAdmin Setup Guide
 
 ---
