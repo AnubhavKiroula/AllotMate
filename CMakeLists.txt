@@ -60,6 +60,7 @@ add_executable(AllotMate
     src/Elective.cpp
     src/MatchingEngine.cpp
     src/SparseMatrix.cpp
+    src/HashTable.cpp
 )
 
 target_include_directories(AllotMate
