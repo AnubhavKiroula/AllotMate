@@ -45,6 +45,11 @@ public:
     // Checks if connection is active and open
     bool isConnected() const;
 
+    // Returns a SQL-safe, single-quoted string literal for `value`
+    // (e.g. O'Brien -> 'O''Brien'). Used when building SQL from user-supplied
+    // CSV data so stray quotes cannot break out into an injection.
+    std::string quoteLiteral(const std::string& value) const;
+
     // Access raw underlying pqxx connection reference
     pqxx::connection& getRawConnection();
 };
