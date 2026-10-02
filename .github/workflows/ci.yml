@@ -11,6 +11,30 @@ jobs:
     name: Build and Check
     runs-on: ubuntu-latest
 
+    # Live PostgreSQL so the database-layer integration tests actually run.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: allotmate
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: allotmate
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      PGPASSWORD: postgres
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,6 +43,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libpqxx-dev postgresql-client pkg-config
+
+      - name: Load schema and seed data
+        run: |
+          psql -h localhost -U postgres -d allotmate -v ON_ERROR_STOP=1 -f sql/01_init_schema.sql
+          psql -h localhost -U postgres -d allotmate -v ON_ERROR_STOP=1 -f sql/02_seed_data.sql
 
       - name: Configure CMake
         run: |
@@ -32,8 +61,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          if [ -f "build/CTestTestfile.cmake" ]; then
-            ctest --test-dir build --output-on-failure
-          else
-            echo "No tests configured yet. Skipping ctest."
-          fi
+          ctest --test-dir build --output-on-failure
