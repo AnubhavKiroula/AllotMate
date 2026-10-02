@@ -122,6 +122,15 @@ bool PostgresConnection::isConnected() const {
     return connection && connection->is_open();
 }
 
+std::string PostgresConnection::quoteLiteral(const std::string& value) const {
+    if (!connection) {
+        throw AllocationException::DatabaseException("Cannot quote value: connection is null.");
+    }
+    // connection->esc() doubles any embedded single quotes; we wrap the result
+    // in quotes ourselves so the output can be dropped straight into SQL.
+    return "'" + connection->esc(value) + "'";
+}
+
 pqxx::connection& PostgresConnection::getRawConnection() {
     if (!connection) {
         throw AllocationException::DatabaseException("Underlying connection is null.");
