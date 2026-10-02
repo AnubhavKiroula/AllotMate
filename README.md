@@ -29,6 +29,7 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 - [`05_DEVELOPMENT.md`](docs/05_DEVELOPMENT.md) — Development Phases, SOLID Rules & Definition of Done
 - [`06_VERSION-CONTROL.md`](docs/06_VERSION-CONTROL.md) — Conventional Commits, Branching Strategy & PR Guidelines
 - [`07_PHASE-1-EVALUATION-GUIDE.md`](docs/07_PHASE-1-EVALUATION-GUIDE.md) — Phase 1 Evaluation Guide, Member Role Manual & Viva Q&A
+- [`08_PHASE-2-EVALUATION-GUIDE.md`](docs/08_PHASE-2-EVALUATION-GUIDE.md) — Phase 2 Evaluation Guide (Backend & Database) & Viva Q&A
 - [`DB-SETUP.md`](docs/DB-SETUP.md) — Database Quickstart & pgAdmin Setup Guide
 
 ---
@@ -177,14 +178,14 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 - [x] **End-to-End CRUD Verification Demo:** Implemented student insert, query, readback, and cleanup cycle in `src/main.cpp`.
 - [x] **Team Setup Documentation:** Authored `docs/DB-SETUP.md` with step-by-step instructions for Docker, pgAdmin, and environment variables.
 
-#### 🔹 Phase 2: Repository Layer, Bulk Import & Isolation Tests (30 Marks) — `IN PROGRESS`
-- [ ] **`PostgresStudentRepo` Implementation:** Implement concrete repository fulfilling `Repository<Student>` interface.
-- [ ] **`PostgresElectiveRepo` Implementation:** Implement concrete repository fulfilling `Repository<Elective>` interface.
-- [ ] **High-Performance Bulk CSV Ingestion:** Ingest 1,500 student records with row-level validation and duplicate roll-number rejection.
-- [ ] **`RUN_LOG` Execution Auditing:** Implement automated run logging storing timestamps, coordinator ID, blocking pairs detected, and outcome summaries.
-- [ ] **Connection Pooling / Reuse:** Implement lightweight RAII connection reuse to avoid per-query TCP connection overhead.
-- [ ] **Isolated Repository Unit Tests:** Write unit tests for repository methods with transactional rollback to protect seed data.
-- [ ] **Zero-Warning Code Quality:** Verify all database layer code compiles cleanly under `-Wall -Wextra -Werror`.
+#### 🔹 Phase 2: Repository Layer, Bulk Import & Isolation Tests (30 Marks) — `COMPLETED`
+- [x] **`PostgresStudentRepo` Implementation:** Concrete repository fulfilling `Repository<Student>` (`include/PostgresStudentRepo.h`, `src/PostgresStudentRepo.cpp`) with `save`/`findById`/`findAll` plus preference loading.
+- [x] **`PostgresElectiveRepo` Implementation:** Concrete repository fulfilling `Repository<Elective>` (`include/PostgresElectiveRepo.h`, `src/PostgresElectiveRepo.cpp`).
+- [x] **High-Performance Bulk CSV Ingestion:** `CsvImporter` validates and de-duplicates rows (sorted-scan duplicate detection); `PostgresStudentRepo::bulkInsert` loads them in chunked multi-row `INSERT`s with `ON CONFLICT` roll-number rejection.
+- [x] **`RUN_LOG` Execution Auditing:** `RunLogRepository` (`include/RunLogRepository.h`, `src/RunLogRepository.cpp`) appends audit rows (coordinator ID, blocking pairs, outcome summary) and reads recent runs.
+- [x] **Connection Pooling / Reuse:** `ConnectionPool` with an RAII `PooledConnection` lease (`include/ConnectionPool.h`, `src/ConnectionPool.cpp`) reuses connections instead of reconnecting per query.
+- [x] **Isolated Repository Unit Tests:** `tests/test_csv_importer.cpp` (no DB) and `tests/test_db_layer.cpp` (uncommitted-transaction rollback protects seed data); wired into CTest and run in CI against a live PostgreSQL service.
+- [x] **Zero-Warning Code Quality:** All database-layer code compiles under `-Wall -Wextra -Werror` (verified by the CI build gate).
 
 #### 🔹 Phase 3: Integration, 1,500-Scale Testing & Demo Readiness (50 Marks) — `UPCOMING`
 - [ ] **MatchingEngine Wire-Up:** Support full end-to-end integration between `MatchingEngine` and repository layer.
@@ -282,23 +283,42 @@ AllotMate/
 │   └── DB-SETUP.md              # Database & pgAdmin setup guide
 ├── include/                     # C++ header files & interfaces
 │   ├── AllocationException.h    # Custom domain & database exception hierarchy
+│   ├── CLI.h                    # Interactive terminal interface
+│   ├── ConnectionPool.h         # RAII pool of reusable DB connections
 │   ├── Coordinator.h            # Academic coordinator domain model
+│   ├── CsvImporter.h            # CSV parse + validation + de-duplication
 │   ├── Elective.h               # Elective course domain model
 │   ├── MatchingEngine.h         # Gale-Shapley stable matching engine
 │   ├── Person.h                 # Abstract base class
 │   ├── PostgresConnection.h     # RAII PostgreSQL client wrapper
+│   ├── PostgresElectiveRepo.h   # Repository<Elective> implementation
+│   ├── PostgresStudentRepo.h    # Repository<Student> + bulk insert
 │   ├── Repository.h             # Generic Repository<T> template interface
-│   └── Student.h                # Student domain model
+│   ├── RunLogRepository.h       # RUN_LOG audit read/write
+│   ├── Student.h                # Student domain model
+│   └── StudentRecord.h          # Plain CSV row (persistence-free)
 ├── sql/                         # Database migrations and seed datasets
 │   ├── 01_init_schema.sql       # 7-table DDL, constraints & indexes
 │   └── 02_seed_data.sql         # 100-student realistic seed script
 ├── src/                         # C++ implementation source files
+│   ├── CLI.cpp
+│   ├── ConnectionPool.cpp
 │   ├── Coordinator.cpp
+│   ├── CsvImporter.cpp
 │   ├── Elective.cpp
 │   ├── MatchingEngine.cpp
 │   ├── PostgresConnection.cpp
+│   ├── PostgresElectiveRepo.cpp
+│   ├── PostgresStudentRepo.cpp
+│   ├── RunLogRepository.cpp
 │   ├── Student.cpp
-│   └── main.cpp                 # Main verification test / CLI entrypoint
+│   └── main.cpp                 # Application entrypoint
+├── tests/                       # CTest unit & integration tests
+│   ├── CMakeLists.txt
+│   ├── test_csv_importer.cpp    # Pure-logic: CSV validation + capacity
+│   └── test_db_layer.cpp        # Repository/DB integration (skips w/o DB)
+├── data/                        # Sample datasets
+│   └── students_sample.csv      # Example bulk-import file
 ├── .env.example                 # Environment configuration template
 ├── .gitignore                   # Git ignore rules
 ├── CMakeLists.txt               # CMake build configuration
