@@ -1,17 +1,17 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <stdexcept>
 
 template <typename K, typename V>
 class HashTable {
 private:
     struct Entry {
-        K key;
-        V value;
-        bool occupied;
-
-        Entry();
+        K key{};
+        std::unique_ptr<V> value;
+        bool occupied = false ;
+        bool deleted = false;
     };
 
     std::vector<Entry> table;
@@ -22,7 +22,6 @@ private:
 
 public:
     explicit HashTable(int capacity = 101);
-    ~HashTable() = default;
 
     void insert(const K& key, const V& value);
     V find(const K& key) const;
@@ -34,26 +33,17 @@ public:
 
 
 template <typename K, typename V>
-HashTable<K, V>::Entry::Entry()
-    : key(),
-      value(),
-      occupied(false) {
-}
-
-
-template <typename K, typename V>
 HashTable<K, V>::HashTable(int capacity)
     : table(capacity),
       capacity(capacity),
       currentSize(0) {
 
-    if (capacity <= 0) {
-        throw std::invalid_argument(
-            "HashTable capacity must be positive."
-        );
-    }
+        if(capacity <= 0){
+            throw std::invalid_argument( 
+                "HashTable capacity must be positive."
+            );
+        }
 }
-
 
 template <typename K, typename V>
 int HashTable<K, V>::hash(const K& key) const {
@@ -69,26 +59,47 @@ void HashTable<K, V>::insert(
 ) {
 
     int index = hash(key);
+    int firstDeleted = -1;
 
     for (int i = 0; i < capacity; ++i) {
 
         int probeIndex = (index + i) % capacity;
+        Entry& entry = table[probeIndex];
 
-        if (!table[probeIndex].occupied) {
+        if(entry.occupied && entry.key == key){
+            entry.value = std::make_unique<V>(value);
+            return;
+        }
 
-            table[probeIndex].key = key;
-            table[probeIndex].value = value;
-            table[probeIndex].occupied = true;
+        if(entry.deleted && firstDeleted == -1){
+            firstDeleted = probeIndex;
+        }
+
+        if( !entry.occupied && !entry.deleted){
+            int target = (firstDeleted != -1)
+                ? firstDeleted
+                : probeIndex;
+            
+            Entry& destination = table[target];
+            destination.key = key;
+            destination.value = std::make_unique<V>(value);
+            destination.occupied = true;
+            destination.deleted = false;
 
             ++currentSize;
             return;
         }
+    }
 
-        if (table[probeIndex].key == key) {
+    if(firstDeleted != -1){
+        Entry& destination = table[firstDeleted];
+        destination.key = key;
+        destination.value = std::make_unique<V>(value);
+        destination.occupied = true;
+        destination.deleted = false;
 
-            table[probeIndex].value = value;
-            return;
-        }
+        ++currentSize;
+        return;
     }
 
     throw std::overflow_error(
@@ -105,15 +116,14 @@ V HashTable<K, V>::find(const K& key) const {
     for (int i = 0; i < capacity; ++i) {
 
         int probeIndex = (index + i) % capacity;
+        const Entry& entry = table[probeIndex];
 
-        if (!table[probeIndex].occupied) {
-            throw std::out_of_range(
-                "Key not found in HashTable."
-            );
+        if(!entry.occupied && !entry.deleted){
+            break;
         }
 
-        if (table[probeIndex].key == key) {
-            return table[probeIndex].value;
+        if(entry.occupied && entry.key == key){
+            return *entry.value;
         }
     }
 
@@ -131,12 +141,13 @@ bool HashTable<K, V>::contains(const K& key) const {
     for (int i = 0; i < capacity; ++i) {
 
         int probeIndex = (index + i) % capacity;
+        const Entry& entry = table[probeIndex];
 
-        if (!table[probeIndex].occupied) {
+        if (!entry.occupied && !entry.deleted) {
             return false;
         }
 
-        if (table[probeIndex].key == key) {
+        if (entry.occupied && entry.key == key) {
             return true;
         }
     }
@@ -153,14 +164,17 @@ void HashTable<K, V>::remove(const K& key) {
     for (int i = 0; i < capacity; ++i) {
 
         int probeIndex = (index + i) % capacity;
+        Entry& entry = table[probeIndex];
 
-        if (!table[probeIndex].occupied) {
+        if (!entry.occupied && !entry.deleted) {
             return;
         }
 
-        if (table[probeIndex].key == key) {
+        if (entry.occupied && entry.key == key) {
 
-            table[probeIndex].occupied = false;
+            entry.value.reset();
+            entry.occupied = false;
+            entry.deleted = true;
             --currentSize;
             return;
         }
@@ -173,3 +187,4 @@ int HashTable<K, V>::size() const {
 
     return currentSize;
 }
+
