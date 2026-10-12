@@ -89,3 +89,31 @@ if(MSVC)
 else()
     target_compile_options(AllotMate PRIVATE -Wall -Wextra -Werror)
 endif()
+
+
+# MatchingEngine tests
+enable_testing()
+
+add_executable(MatchingEngineTest
+    src/MatchingEngineTest.cpp
+    src/Student.cpp
+    src/Elective.cpp
+    src/MatchingEngine.cpp
+    src/SparseMatrix.cpp
+)
+
+target_include_directories(MatchingEngineTest
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+)
+
+if(MSVC)
+    target_compile_options(MatchingEngineTest PRIVATE /W4)
+else()
+    target_compile_options(MatchingEngineTest PRIVATE -Wall -Wextra -Werror)
+endif()
+
+add_test(
+    NAME MatchingEngineTest
+    COMMAND MatchingEngineTest
+)

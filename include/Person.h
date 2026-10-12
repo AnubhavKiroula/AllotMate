@@ -10,6 +10,9 @@ class Person {
         string name;
 
     public:
+        int getId() const{
+            return id;
+        }
         virtual void displayProfile() = 0;
         virtual ~Person() = default;
         

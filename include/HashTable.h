@@ -24,7 +24,8 @@ public:
     explicit HashTable(int capacity = 101);
 
     void insert(const K& key, const V& value);
-    V find(const K& key) const;
+    V& find(const K& key);
+    const V& find(const K& key) const;
     bool contains(const K& key) const;
     void remove(const K& key);
 
@@ -109,14 +110,14 @@ void HashTable<K, V>::insert(
 
 
 template <typename K, typename V>
-V HashTable<K, V>::find(const K& key) const {
+V& HashTable<K, V>::find(const K& key) {
 
     int index = hash(key);
 
     for (int i = 0; i < capacity; ++i) {
 
         int probeIndex = (index + i) % capacity;
-        const Entry& entry = table[probeIndex];
+        Entry& entry = table[probeIndex];
 
         if(!entry.occupied && !entry.deleted){
             break;
@@ -132,6 +133,25 @@ V HashTable<K, V>::find(const K& key) const {
     );
 }
 
+template <typename K, typename V>
+const V& HashTable<K, V>::find(const K& key) const{
+    int index = hash(key);
+
+    for(int i=0; i< capacity; ++i){
+        int probeIndex = (index + i)% capacity;
+        const Entry& entry = table[probeIndex];
+
+        if(!entry.occupied && !entry.deleted){
+            break;
+        }
+
+        if(entry.occupied && entry.key == key){
+            return *entry.value;
+        }
+    }
+
+    throw std::out_of_range("Key not found in HashTable.");
+}
 
 template <typename K, typename V>
 bool HashTable<K, V>::contains(const K& key) const {
