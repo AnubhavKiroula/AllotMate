@@ -15,6 +15,23 @@ namespace {
         }
         return res;
     }
+    std::string getEnvironmentVariable(const char* name) {
+    #ifdef _WIN32
+        char* value = nullptr;
+        size_t size = 0;
+
+        if (_dupenv_s(&value, &size, name) != 0 || value == nullptr) {
+            return {};
+        }
+
+        std::string result(value);
+        free(value);
+        return result;
+    #else
+        const char* value = std::getenv(name);
+        return value ? value : "";
+    #endif
+    }
 }
 
 std::string DbConfig::toConnectionString() const {
@@ -31,17 +48,17 @@ DbConfig DbConfig::fromEnv(const std::string& envFilePath) {
     DbConfig cfg;
 
     // Check system environment variables first
-    const char* envHost = std::getenv("DB_HOST");
-    const char* envPort = std::getenv("DB_PORT");
-    const char* envName = std::getenv("DB_NAME");
-    const char* envUser = std::getenv("DB_USER");
-    const char* envPass = std::getenv("DB_PASSWORD");
+    const std::string envHost = getEnvironmentVariable("DB_HOST");
+    const std::string envPort = getEnvironmentVariable("DB_PORT");
+    const std::string envName = getEnvironmentVariable("DB_NAME");
+    const std::string envUser = getEnvironmentVariable("DB_USER");
+    const std::string envPass = getEnvironmentVariable("DB_PASSWORD");
 
-    if (envHost) cfg.host = envHost;
-    if (envPort) cfg.port = envPort;
-    if (envName) cfg.dbname = envName;
-    if (envUser) cfg.user = envUser;
-    if (envPass) cfg.password = envPass;
+    if (!envHost.empty()) cfg.host = envHost;
+    if (!envPort.empty()) cfg.port = envPort;
+    if (!envName.empty()) cfg.dbname = envName;
+    if (!envUser.empty()) cfg.user = envUser;
+    if (!envPass.empty()) cfg.password = envPass;
 
     // Read .env file if available to fill in any unset fields
     std::ifstream file(envFilePath);
