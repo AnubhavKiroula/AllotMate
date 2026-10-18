@@ -2,8 +2,8 @@
 
 #include <fstream>
 #include <sstream>
-#include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 std::string CsvImporter::trim(const std::string& s) {
     size_t first = s.find_first_not_of(" \t\r\n");
@@ -97,10 +97,7 @@ ImportResult CsvImporter::parseStream(std::istream& in) {
     // Sort valid rows by roll number so duplicates sit next to each other.
     // Sorting here is the DS concept for this module: an O(n log n) sort turns
     // duplicate detection into a single linear scan over adjacent rows.
-    std::sort(result.accepted.begin(), result.accepted.end(),
-              [](const StudentRecord& a, const StudentRecord& b) {
-                  return a.rollNo < b.rollNo;
-              });
+    sortByRollNo(result.accepted);
 
     std::vector<StudentRecord> unique;
     unique.reserve(result.accepted.size());
@@ -114,6 +111,49 @@ ImportResult CsvImporter::parseStream(std::istream& in) {
     result.accepted = std::move(unique);
 
     return result;
+}
+
+void CsvImporter::sortByRollNo(std::vector<StudentRecord>& rows) {
+    std::vector<StudentRecord> temp(rows.size());
+    mergeSort(rows, temp, 0, rows.size());
+}
+
+void CsvImporter::mergeSort(std::vector<StudentRecord>& rows, std::vector<StudentRecord>& temp,
+                            size_t left, size_t right) {
+    if (right - left < 2) {
+        return; // zero or one row is already sorted
+    }
+    size_t mid = left + (right - left) / 2;
+    mergeSort(rows, temp, left, mid);
+    mergeSort(rows, temp, mid, right);
+    merge(rows, temp, left, mid, right);
+}
+
+void CsvImporter::merge(std::vector<StudentRecord>& rows, std::vector<StudentRecord>& temp,
+                        size_t left, size_t mid, size_t right) {
+    size_t i = left; // walks the left half
+    size_t j = mid;  // walks the right half
+    size_t k = left; // next free slot in temp
+
+    while (i < mid && j < right) {
+        // Strict '<' means a tie takes the LEFT row first -- this is what makes
+        // the sort stable.
+        if (rows[j].rollNo < rows[i].rollNo) {
+            temp[k++] = rows[j++];
+        } else {
+            temp[k++] = rows[i++];
+        }
+    }
+    while (i < mid) {
+        temp[k++] = rows[i++];
+    }
+    while (j < right) {
+        temp[k++] = rows[j++];
+    }
+
+    for (k = left; k < right; k++) {
+        rows[k] = temp[k];
+    }
 }
 
 ImportResult CsvImporter::parseFile(const std::string& path) {

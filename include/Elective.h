@@ -24,4 +24,5 @@ class Elective{
         bool operator<(const Elective& other) const;
         bool operator==(const Elective& other) const;
         void allocateSeat();
+        void resetSeats();
 };

@@ -15,8 +15,13 @@ int RunLogRepository::logRun(int coordinatorId, int blockingPairsFound,
     } else {
         sql << "NULL"; // run not attributed to a specific coordinator
     }
-    sql << ", " << blockingPairsFound
-        << ", " << db.quoteLiteral(summary)
+    sql << ", ";
+    if (blockingPairsFound >= 0) {
+        sql << blockingPairsFound;
+    } else {
+        sql << "NULL"; // stability check not run for this allocation
+    }
+    sql << ", " << db.quoteLiteral(summary)
         << ") RETURNING run_id;";
 
     pqxx::result res = db.executeQuery(sql.str());
@@ -46,7 +51,9 @@ std::vector<RunLogEntry> RunLogRepository::recentRuns(int limit) {
                                   ? -1
                                   : row["coordinator_id"].as<int>();
         entry.runAt = row["run_at"].as<std::string>();
-        entry.blockingPairsFound = row["blocking_pairs_found"].as<int>();
+        entry.blockingPairsFound = row["blocking_pairs_found"].is_null()
+                                       ? -1
+                                       : row["blocking_pairs_found"].as<int>();
         entry.outcomeSummary = row["outcome_summary"].is_null()
                                    ? ""
                                    : row["outcome_summary"].as<std::string>();

@@ -9,7 +9,7 @@ struct RunLogEntry {
     int runId;
     int coordinatorId;        // -1 when the run was not tied to a coordinator
     std::string runAt;        // timestamp as returned by PostgreSQL
-    int blockingPairsFound;
+    int blockingPairsFound;   // -1 when the stability check was not run (stored as NULL)
     std::string outcomeSummary;
 };
 
@@ -24,7 +24,9 @@ public:
     explicit RunLogRepository(PostgresConnection& connection);
 
     // Appends an audit row and returns the generated run_id. Pass a
-    // coordinatorId <= 0 to store NULL (run not attributed to a coordinator).
+    // coordinatorId <= 0 to store NULL (run not attributed to a coordinator),
+    // and blockingPairsFound < 0 to store NULL (stability check not run) --
+    // so a run is never recorded as "0 blocking pairs" unless that was checked.
     int logRun(int coordinatorId, int blockingPairsFound, const std::string& summary);
 
     // Returns the most recent runs, newest first (for the audit/report screen).

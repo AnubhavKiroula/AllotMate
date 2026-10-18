@@ -18,6 +18,8 @@
 #include "PostgresStudentRepo.h"
 #include "PostgresElectiveRepo.h"
 #include "RunLogRepository.h"
+#include "WaitlistRepository.h"
+#include "ReportRepository.h"
 #include "ConnectionPool.h"
 #include "StudentRecord.h"
 #include "AllocationException.h"
@@ -86,6 +88,15 @@ static void testStudentRepoAndBulkInsert(PostgresConnection& conn) {
     check(!all.front().getPreferenceList().empty(),
           "students load with their ranked preferences");
 
+    // The merge-join must attach EVERY preference row, not just the first few.
+    size_t loadedPrefs = 0;
+    for (const Student& s : all) {
+        loadedPrefs += s.getPreferenceList().size();
+    }
+    pqxx::result prefCount = conn.executeQuery("SELECT count(*) FROM PREFERENCE;");
+    check(loadedPrefs == static_cast<size_t>(prefCount[0][0].as<int>()),
+          "findAll attaches every preference row (merge-join is complete)");
+
     // Clean any leftovers from a previous failed run, then bulk-insert sentinels.
     conn.executeCommand("DELETE FROM STUDENT WHERE roll_no LIKE 'ITEST%';");
 
@@ -123,7 +134,83 @@ static void testRunLog(PostgresConnection& conn) {
     }
     check(found, "logged run appears in recentRuns");
 
-    conn.executeCommand("DELETE FROM RUN_LOG WHERE run_id = " + std::to_string(runId) + ";");
+    // A run whose stability check was not performed is stored as NULL and
+    // read back as -1 -- never as a misleading 0.
+    int uncheckedId = repo.logRun(-1, -1, "unit-test run: stability not checked");
+    pqxx::result stored = conn.executeQuery(
+        "SELECT blocking_pairs_found IS NULL AS is_null FROM RUN_LOG WHERE run_id = "
+        + std::to_string(uncheckedId) + ";");
+    check(stored[0]["is_null"].as<bool>(), "unchecked run stores NULL blocking pairs");
+
+    bool readBackAsMinusOne = false;
+    for (const auto& entry : repo.recentRuns(5)) {
+        if (entry.runId == uncheckedId) {
+            readBackAsMinusOne = (entry.blockingPairsFound == -1);
+        }
+    }
+    check(readBackAsMinusOne, "NULL blocking pairs read back as -1 (not computed)");
+
+    conn.executeCommand("DELETE FROM RUN_LOG WHERE run_id IN (" + std::to_string(runId)
+                        + ", " + std::to_string(uncheckedId) + ");");
+}
+
+static void testWaitlistRepo(PostgresConnection& conn) {
+    std::cout << "testWaitlistRepo\n";
+    WaitlistRepository repo(conn);
+    const int electiveId = 1;
+    std::vector<int> original = repo.loadWaitlist(electiveId);
+
+    std::vector<int> queue = { 5, 3, 9 };
+    repo.replaceWaitlist(electiveId, queue);
+    check(repo.loadWaitlist(electiveId) == queue, "waitlist order is preserved (5, 3, 9)");
+
+    // Listing the same student twice violates UNIQUE(student_id, elective_id).
+    // The whole replace must roll back, leaving the previous waitlist intact.
+    bool threw = false;
+    try {
+        repo.replaceWaitlist(electiveId, std::vector<int>{ 7, 7 });
+    } catch (const AllocationException::DatabaseException&) {
+        threw = true;
+    }
+    check(threw, "invalid waitlist throws DatabaseException");
+    check(repo.loadWaitlist(electiveId) == queue, "failed replace leaves old waitlist untouched");
+
+    repo.replaceWaitlist(electiveId, original); // restore seed state
+    check(repo.loadWaitlist(electiveId) == original, "waitlist restored to its original state");
+}
+
+static void testReportQueries(PostgresConnection& conn) {
+    std::cout << "testReportQueries\n";
+    ReportRepository reports(conn);
+    WaitlistRepository waitlists(conn);
+    const std::string round = "TEST-REPORT";
+
+    // Sentinel data: students 1 and 2 allotted, students 3 and 4 waitlisted.
+    conn.executeCommand("DELETE FROM ALLOTMENT WHERE round = '" + round + "';");
+    conn.executeCommand("INSERT INTO ALLOTMENT (student_id, elective_id, round) VALUES "
+                        "(1, 2, '" + round + "'), (2, 3, '" + round + "');");
+    std::vector<int> originalWaitlist = waitlists.loadWaitlist(2);
+    waitlists.replaceWaitlist(2, std::vector<int>{ 4, 3 });
+
+    std::vector<AllotmentRow> all = reports.allotmentResults(round);
+    check(all.size() == 2, "allotmentResults returns both allotments of the round");
+
+    std::vector<AllotmentRow> filtered = reports.allotmentResults(round, 2);
+    check(filtered.size() == 1 && filtered[0].rollNo == "2024CS001",
+          "allotmentResults filters by elective");
+
+    pqxx::result studentCount = conn.executeQuery("SELECT count(*) FROM STUDENT;");
+    std::vector<StudentRow> unmatched = reports.unmatchedStudents(round);
+    check(unmatched.size() == static_cast<size_t>(studentCount[0][0].as<int>()) - 2,
+          "unmatchedStudents lists everyone without an allotment");
+
+    std::vector<WaitlistRow> queue = reports.waitlistFor(2);
+    check(queue.size() == 2 && queue[0].position == 1 && queue[0].rollNo == "2024CS004",
+          "waitlistFor returns the queue front first");
+
+    // Clean up so the seed is unchanged.
+    waitlists.replaceWaitlist(2, originalWaitlist);
+    conn.executeCommand("DELETE FROM ALLOTMENT WHERE round = '" + round + "';");
 }
 
 static void testConnectionPoolReuse(const DbConfig& cfg) {
@@ -163,6 +250,8 @@ int main() {
     testElectiveRepo(conn);
     testStudentRepoAndBulkInsert(conn);
     testRunLog(conn);
+    testWaitlistRepo(conn);
+    testReportQueries(conn);
     testConnectionPoolReuse(cfg);
 
     std::cout << "============================================\n";

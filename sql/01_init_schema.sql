@@ -81,7 +81,7 @@ CREATE TABLE RUN_LOG (
     run_id SERIAL PRIMARY KEY,
     coordinator_id INT,
     run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    blocking_pairs_found INT NOT NULL DEFAULT 0,
+    blocking_pairs_found INT,  -- NULL = stability check not run for this run (never assume 0)
     outcome_summary TEXT,
     CONSTRAINT fk_run_log_coordinator FOREIGN KEY (coordinator_id) REFERENCES COORDINATOR(coordinator_id) ON DELETE SET NULL
 );

@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
-#include <algorithm>
 
 namespace {
     std::string trim(const std::string& str) {
@@ -14,6 +13,23 @@ namespace {
             res = res.substr(1, res.size() - 2);
         }
         return res;
+    }
+    std::string getEnvironmentVariable(const char* name) {
+    #ifdef _WIN32
+        char* value = nullptr;
+        size_t size = 0;
+
+        if (_dupenv_s(&value, &size, name) != 0 || value == nullptr) {
+            return {};
+        }
+
+        std::string result(value);
+        free(value);
+        return result;
+    #else
+        const char* value = std::getenv(name);
+        return value ? value : "";
+    #endif
     }
 }
 
@@ -31,17 +47,17 @@ DbConfig DbConfig::fromEnv(const std::string& envFilePath) {
     DbConfig cfg;
 
     // Check system environment variables first
-    const char* envHost = std::getenv("DB_HOST");
-    const char* envPort = std::getenv("DB_PORT");
-    const char* envName = std::getenv("DB_NAME");
-    const char* envUser = std::getenv("DB_USER");
-    const char* envPass = std::getenv("DB_PASSWORD");
+    const std::string envHost = getEnvironmentVariable("DB_HOST");
+    const std::string envPort = getEnvironmentVariable("DB_PORT");
+    const std::string envName = getEnvironmentVariable("DB_NAME");
+    const std::string envUser = getEnvironmentVariable("DB_USER");
+    const std::string envPass = getEnvironmentVariable("DB_PASSWORD");
 
-    if (envHost) cfg.host = envHost;
-    if (envPort) cfg.port = envPort;
-    if (envName) cfg.dbname = envName;
-    if (envUser) cfg.user = envUser;
-    if (envPass) cfg.password = envPass;
+    if (!envHost.empty()) cfg.host = envHost;
+    if (!envPort.empty()) cfg.port = envPort;
+    if (!envName.empty()) cfg.dbname = envName;
+    if (!envUser.empty()) cfg.user = envUser;
+    if (!envPass.empty()) cfg.password = envPass;
 
     // Read .env file if available to fill in any unset fields
     std::ifstream file(envFilePath);
@@ -55,11 +71,11 @@ DbConfig DbConfig::fromEnv(const std::string& envFilePath) {
                 std::string key = trim(line.substr(0, eqPos));
                 std::string val = trim(line.substr(eqPos + 1));
                 if (!val.empty()) {
-                    if (key == "DB_HOST" && !envHost) cfg.host = val;
-                    else if (key == "DB_PORT" && !envPort) cfg.port = val;
-                    else if (key == "DB_NAME" && !envName) cfg.dbname = val;
-                    else if (key == "DB_USER" && !envUser) cfg.user = val;
-                    else if (key == "DB_PASSWORD" && !envPass) cfg.password = val;
+                    if (key == "DB_HOST" && envHost.empty()) cfg.host = val;
+                    else if (key == "DB_PORT" && envPort.empty()) cfg.port = val;
+                    else if (key == "DB_NAME" && envName.empty()) cfg.dbname = val;
+                    else if (key == "DB_USER" && envUser.empty()) cfg.user = val;
+                    else if (key == "DB_PASSWORD" && envPass.empty()) cfg.password = val;
                 }
             }
         }
