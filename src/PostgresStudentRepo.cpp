@@ -3,7 +3,6 @@
 
 #include <sstream>
 #include <iomanip>
-#include <unordered_map>
 #include <algorithm>
 #include <utility>
 
@@ -102,26 +101,31 @@ std::vector<Student> PostgresStudentRepo::findAll() {
 
     std::vector<Student> students;
     students.reserve(rows.size());
-    std::unordered_map<int, size_t> indexById;
 
     for (const auto& row : rows) {
-        int id = row["student_id"].as<int>();
-        Student student(id, row["name"].as<std::string>(),
+        Student student(row["student_id"].as<int>(), row["name"].as<std::string>(),
                         static_cast<float>(row["cgpa"].as<double>()));
         student.setStatus(statusFromText(row["status"].as<std::string>()));
-        indexById[id] = students.size();
         students.push_back(student);
     }
 
-    // One pass over all preferences (instead of a query per student) keeps
-    // findAll() at two round trips even at 1,500-student scale.
+    // One query for all preferences (instead of one per student) keeps findAll()
+    // at two round trips even at 1,500-student scale.
     pqxx::result prefs = db.executeQuery(
         "SELECT student_id, elective_id FROM PREFERENCE ORDER BY student_id, rank ASC;");
+
+    // Merge-join: students and preferences are both sorted by student_id, so a
+    // single index `s` walks the students while we walk the preferences -- the
+    // same idea as the merge step of merge sort. O(students + preferences) and
+    // no lookup table needed.
+    size_t s = 0;
     for (const auto& row : prefs) {
         int studentId = row["student_id"].as<int>();
-        auto it = indexById.find(studentId);
-        if (it != indexById.end()) {
-            students[it->second].addPreference(row["elective_id"].as<int>());
+        while (s < students.size() && students[s].getId() < studentId) {
+            s++;
+        }
+        if (s < students.size() && students[s].getId() == studentId) {
+            students[s].addPreference(row["elective_id"].as<int>());
         }
     }
 

@@ -2,7 +2,6 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
-#include <algorithm>
 
 namespace {
     std::string trim(const std::string& str) {

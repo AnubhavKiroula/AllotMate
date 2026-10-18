@@ -36,7 +36,20 @@ public:
     // Parses already-opened CSV content. Useful for tests (feed a stringstream).
     static ImportResult parseStream(std::istream& in);
 
+    // Sorts records by roll number using our own merge sort (O(n log n)).
+    // Merge sort is stable: rows with the same roll number keep their file
+    // order, which is what lets duplicate removal keep the *first* occurrence.
+    static void sortByRollNo(std::vector<StudentRecord>& rows);
+
 private:
+    // Recursively sorts rows[left, right) using `temp` as scratch space.
+    static void mergeSort(std::vector<StudentRecord>& rows, std::vector<StudentRecord>& temp,
+                          size_t left, size_t right);
+
+    // Merges the sorted halves rows[left, mid) and rows[mid, right).
+    static void merge(std::vector<StudentRecord>& rows, std::vector<StudentRecord>& temp,
+                      size_t left, size_t mid, size_t right);
+
     // Splits one line into a record. Returns false and fills `reason` on any
     // validation failure (wrong field count, empty field, bad/out-of-range CGPA).
     static bool parseLine(const std::string& line, StudentRecord& out, std::string& reason);
