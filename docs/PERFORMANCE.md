@@ -28,6 +28,11 @@ row) would be slower over a real network.
 | 1,500 separate lookups by `roll_no` (total) | 1,073 – 1,112 ms |
 | ↳ per lookup | 0.72 – 0.74 ms |
 
+A later set of 4 runs, after the HashTable fix and with `--allocate`, gave
+slightly higher import and query numbers (bulkInsert 70–79 ms, findAll 13–15 ms,
+0.77–0.79 ms per lookup). That's normal run-to-run variation on a shared laptop,
+so both ranges are reported rather than the best one.
+
 ### What the numbers show
 - **Batching beats per-row queries by about 100×.** One indexed lookup takes
   ~0.73 ms end-to-end, but `EXPLAIN ANALYZE` (below) shows the query itself
@@ -41,18 +46,32 @@ row) would be slower over a real network.
 - The importer's hand-written merge sort handles 1,500 rows in a few milliseconds, so it's
   nowhere near being the bottleneck.
 
-### Full allocation at 1,500: blocked, not measured
-`benchmark_db --allocate` currently fails with **`HashTable is full`**. The
-cause is in the matching engine (Member 1, PR #22): `HashTable` has a fixed
-capacity of 101 slots and never rehashes, so the engine can't index more than
-101 students. The 100-student seed fits only by coincidence. Importing even
-8 more students reproduces the failure (verified).
+## Full allocation at 1,500 (`benchmark_db --allocate`, 4 runs)
 
-Because the engine throws before any result is saved, and
-`AllocationService` writes in a single transaction, the failed run left
-**no partial data** in the database. The root cause and a suggested fix
-(grow and rehash at load factor 0.7) are on PR #22. The full-run timing will be
-added here once that fix lands.
+| Step | Range over 4 runs |
+|---|---|
+| Full allocation run: load → Gale–Shapley → save (1 transaction) → audit | **186 – 196 ms** |
+| Result (identical every run) | **1,426 matched, 74 unmatched** of 1,500 |
+
+The same property tests used on the seed (`tests/test_allocation.cpp`) were
+also run against the 1,500-student database, and **all 18 checks passed**:
+- **0 blocking pairs** across 1,426 placements (stable matching);
+- no elective over capacity, and `seats_filled` equal to the saved allotments;
+- every placement is one of the student's own preferences;
+- re-runs are deterministic;
+- a concurrent run is refused.
+
+### How scale testing found and fixed a bug
+The first `--allocate` attempt failed with **`HashTable is full`**.
+`HashTable` (matching engine, PR #22) had a fixed 101 slots and never grew. The
+100-student seed fit only by coincidence, and importing just 8 more students
+reproduced the crash. Because `AllocationService` saves in one transaction and
+the engine failed before saving, that failed run left **no partial data**.
+
+Fix (PR #22, commit `6ffdfe0`): `insert()` now **rehashes** into about
+2 × capacity once the load factor would pass 0.7. Value pointers are moved, not
+copied, so references from `find()` stay valid. Regression tests cover
+1,000-key growth and a 1,500-student engine run.
 
 ## Index profiling (`EXPLAIN (ANALYZE, BUFFERS)`, 1,500 scale)
 
