@@ -22,3 +22,11 @@ target_link_libraries(test_db_layer PRIVATE allotmate_core)
 target_compile_options(test_db_layer PRIVATE ${ALLOTMATE_WARNINGS})
 add_test(NAME db_layer COMMAND test_db_layer)
 set_tests_properties(db_layer PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# End-to-end allocation: DB -> MatchingEngine -> DB, checking capacity,
+# stability, re-run and locking properties. Skips without a seeded database.
+add_executable(test_allocation test_allocation.cpp)
+target_link_libraries(test_allocation PRIVATE allotmate_core)
+target_compile_options(test_allocation PRIVATE ${ALLOTMATE_WARNINGS})
+add_test(NAME allocation COMMAND test_allocation)
+set_tests_properties(allocation PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
