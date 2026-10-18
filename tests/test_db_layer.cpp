@@ -86,6 +86,15 @@ static void testStudentRepoAndBulkInsert(PostgresConnection& conn) {
     check(!all.front().getPreferenceList().empty(),
           "students load with their ranked preferences");
 
+    // The merge-join must attach EVERY preference row, not just the first few.
+    size_t loadedPrefs = 0;
+    for (const Student& s : all) {
+        loadedPrefs += s.getPreferenceList().size();
+    }
+    pqxx::result prefCount = conn.executeQuery("SELECT count(*) FROM PREFERENCE;");
+    check(loadedPrefs == static_cast<size_t>(prefCount[0][0].as<int>()),
+          "findAll attaches every preference row (merge-join is complete)");
+
     // Clean any leftovers from a previous failed run, then bulk-insert sentinels.
     conn.executeCommand("DELETE FROM STUDENT WHERE roll_no LIKE 'ITEST%';");
 
