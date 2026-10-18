@@ -18,6 +18,7 @@
 #include "PostgresStudentRepo.h"
 #include "PostgresElectiveRepo.h"
 #include "RunLogRepository.h"
+#include "WaitlistRepository.h"
 #include "ConnectionPool.h"
 #include "StudentRecord.h"
 #include "AllocationException.h"
@@ -152,6 +153,31 @@ static void testRunLog(PostgresConnection& conn) {
                         + ", " + std::to_string(uncheckedId) + ");");
 }
 
+static void testWaitlistRepo(PostgresConnection& conn) {
+    std::cout << "testWaitlistRepo\n";
+    WaitlistRepository repo(conn);
+    const int electiveId = 1;
+    std::vector<int> original = repo.loadWaitlist(electiveId);
+
+    std::vector<int> queue = { 5, 3, 9 };
+    repo.replaceWaitlist(electiveId, queue);
+    check(repo.loadWaitlist(electiveId) == queue, "waitlist order is preserved (5, 3, 9)");
+
+    // Listing the same student twice violates UNIQUE(student_id, elective_id).
+    // The whole replace must roll back, leaving the previous waitlist intact.
+    bool threw = false;
+    try {
+        repo.replaceWaitlist(electiveId, std::vector<int>{ 7, 7 });
+    } catch (const AllocationException::DatabaseException&) {
+        threw = true;
+    }
+    check(threw, "invalid waitlist throws DatabaseException");
+    check(repo.loadWaitlist(electiveId) == queue, "failed replace leaves old waitlist untouched");
+
+    repo.replaceWaitlist(electiveId, original); // restore seed state
+    check(repo.loadWaitlist(electiveId) == original, "waitlist restored to its original state");
+}
+
 static void testConnectionPoolReuse(const DbConfig& cfg) {
     std::cout << "testConnectionPoolReuse\n";
     ConnectionPool pool(cfg, 2);
@@ -189,6 +215,7 @@ int main() {
     testElectiveRepo(conn);
     testStudentRepoAndBulkInsert(conn);
     testRunLog(conn);
+    testWaitlistRepo(conn);
     testConnectionPoolReuse(cfg);
 
     std::cout << "============================================\n";
