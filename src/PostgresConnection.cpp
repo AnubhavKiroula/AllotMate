@@ -72,11 +72,11 @@ DbConfig DbConfig::fromEnv(const std::string& envFilePath) {
                 std::string key = trim(line.substr(0, eqPos));
                 std::string val = trim(line.substr(eqPos + 1));
                 if (!val.empty()) {
-                    if (key == "DB_HOST" && !envHost) cfg.host = val;
-                    else if (key == "DB_PORT" && !envPort) cfg.port = val;
-                    else if (key == "DB_NAME" && !envName) cfg.dbname = val;
-                    else if (key == "DB_USER" && !envUser) cfg.user = val;
-                    else if (key == "DB_PASSWORD" && !envPass) cfg.password = val;
+                    if (key == "DB_HOST" && envHost.empty()) cfg.host = val;
+                    else if (key == "DB_PORT" && envPort.empty()) cfg.port = val;
+                    else if (key == "DB_NAME" && envName.empty()) cfg.dbname = val;
+                    else if (key == "DB_USER" && envUser.empty()) cfg.user = val;
+                    else if (key == "DB_PASSWORD" && envPass.empty()) cfg.password = val;
                 }
             }
         }
@@ -137,6 +137,15 @@ int PostgresConnection::executeCommand(const std::string& sql) {
 
 bool PostgresConnection::isConnected() const {
     return connection && connection->is_open();
+}
+
+std::string PostgresConnection::quoteLiteral(const std::string& value) const {
+    if (!connection) {
+        throw AllocationException::DatabaseException("Cannot quote value: connection is null.");
+    }
+    // connection->esc() doubles any embedded single quotes; we wrap the result
+    // in quotes ourselves so the output can be dropped straight into SQL.
+    return "'" + connection->esc(value) + "'";
 }
 
 pqxx::connection& PostgresConnection::getRawConnection() {
