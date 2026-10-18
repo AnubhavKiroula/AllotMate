@@ -19,6 +19,7 @@
 #include "PostgresElectiveRepo.h"
 #include "RunLogRepository.h"
 #include "WaitlistRepository.h"
+#include "ReportRepository.h"
 #include "ConnectionPool.h"
 #include "StudentRecord.h"
 #include "AllocationException.h"
@@ -178,6 +179,40 @@ static void testWaitlistRepo(PostgresConnection& conn) {
     check(repo.loadWaitlist(electiveId) == original, "waitlist restored to its original state");
 }
 
+static void testReportQueries(PostgresConnection& conn) {
+    std::cout << "testReportQueries\n";
+    ReportRepository reports(conn);
+    WaitlistRepository waitlists(conn);
+    const std::string round = "TEST-REPORT";
+
+    // Sentinel data: students 1 and 2 allotted, students 3 and 4 waitlisted.
+    conn.executeCommand("DELETE FROM ALLOTMENT WHERE round = '" + round + "';");
+    conn.executeCommand("INSERT INTO ALLOTMENT (student_id, elective_id, round) VALUES "
+                        "(1, 2, '" + round + "'), (2, 3, '" + round + "');");
+    std::vector<int> originalWaitlist = waitlists.loadWaitlist(2);
+    waitlists.replaceWaitlist(2, std::vector<int>{ 4, 3 });
+
+    std::vector<AllotmentRow> all = reports.allotmentResults(round);
+    check(all.size() == 2, "allotmentResults returns both allotments of the round");
+
+    std::vector<AllotmentRow> filtered = reports.allotmentResults(round, 2);
+    check(filtered.size() == 1 && filtered[0].rollNo == "2024CS001",
+          "allotmentResults filters by elective");
+
+    pqxx::result studentCount = conn.executeQuery("SELECT count(*) FROM STUDENT;");
+    std::vector<StudentRow> unmatched = reports.unmatchedStudents(round);
+    check(unmatched.size() == static_cast<size_t>(studentCount[0][0].as<int>()) - 2,
+          "unmatchedStudents lists everyone without an allotment");
+
+    std::vector<WaitlistRow> queue = reports.waitlistFor(2);
+    check(queue.size() == 2 && queue[0].position == 1 && queue[0].rollNo == "2024CS004",
+          "waitlistFor returns the queue front first");
+
+    // Clean up so the seed is unchanged.
+    waitlists.replaceWaitlist(2, originalWaitlist);
+    conn.executeCommand("DELETE FROM ALLOTMENT WHERE round = '" + round + "';");
+}
+
 static void testConnectionPoolReuse(const DbConfig& cfg) {
     std::cout << "testConnectionPoolReuse\n";
     ConnectionPool pool(cfg, 2);
@@ -216,6 +251,7 @@ int main() {
     testStudentRepoAndBulkInsert(conn);
     testRunLog(conn);
     testWaitlistRepo(conn);
+    testReportQueries(conn);
     testConnectionPoolReuse(cfg);
 
     std::cout << "============================================\n";

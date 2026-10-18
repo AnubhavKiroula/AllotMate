@@ -65,6 +65,7 @@ add_library(allotmate_core STATIC
     src/RunLogRepository.cpp
     src/ConnectionPool.cpp
     src/WaitlistRepository.cpp
+    src/ReportRepository.cpp
 )
 
 target_include_directories(allotmate_core
