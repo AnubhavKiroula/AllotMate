@@ -132,7 +132,24 @@ static void testRunLog(PostgresConnection& conn) {
     }
     check(found, "logged run appears in recentRuns");
 
-    conn.executeCommand("DELETE FROM RUN_LOG WHERE run_id = " + std::to_string(runId) + ";");
+    // A run whose stability check was not performed is stored as NULL and
+    // read back as -1 -- never as a misleading 0.
+    int uncheckedId = repo.logRun(-1, -1, "unit-test run: stability not checked");
+    pqxx::result stored = conn.executeQuery(
+        "SELECT blocking_pairs_found IS NULL AS is_null FROM RUN_LOG WHERE run_id = "
+        + std::to_string(uncheckedId) + ";");
+    check(stored[0]["is_null"].as<bool>(), "unchecked run stores NULL blocking pairs");
+
+    bool readBackAsMinusOne = false;
+    for (const auto& entry : repo.recentRuns(5)) {
+        if (entry.runId == uncheckedId) {
+            readBackAsMinusOne = (entry.blockingPairsFound == -1);
+        }
+    }
+    check(readBackAsMinusOne, "NULL blocking pairs read back as -1 (not computed)");
+
+    conn.executeCommand("DELETE FROM RUN_LOG WHERE run_id IN (" + std::to_string(runId)
+                        + ", " + std::to_string(uncheckedId) + ");");
 }
 
 static void testConnectionPoolReuse(const DbConfig& cfg) {
