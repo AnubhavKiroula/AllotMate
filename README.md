@@ -191,7 +191,7 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 
 #### 🔹 Phase 3: Integration, 1,500-Scale Testing & Demo Readiness (50 Marks) — `MOSTLY COMPLETE`
 - [x] **MatchingEngine Wire-Up:** `AllocationService` runs DB → `MatchingEngine` → DB, saves results in one transaction and audits each run in `RUN_LOG`. Verified end-to-end on the seed (100/100 matched, no blocking pairs).
-- [x] **1,500-Student Scale Benchmarking:** `scripts/scale_seed_1500.sql` + `tools/benchmark_db.cpp`; measured import and query throughput recorded in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). ⚠️ The *full allocation* at 1,500 is blocked by the engine's fixed-size `HashTable` (Member 1, see Next work).
+- [x] **1,500-Student Scale Benchmarking:** `scripts/scale_seed_1500.sql` + `tools/benchmark_db.cpp`; measured in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). A full 1,500-student allocation takes ~190 ms (1,426 matched, 0 blocking pairs). Scale testing found the engine's fixed-size `HashTable` bug, which is now fixed with rehashing.
 - [x] **Waitlist Persistence Sync:** `WaitlistRepository` stores and loads waitlist order atomically, ready for the AVL tree's in-order output (Member 2).
 - [x] **Concurrency & Re-run Safety:** RAII `RunLock` (PostgreSQL advisory lock) refuses concurrent runs (SRS #10). Re-running an allocated round needs explicit permission (SRS #7). The `CHECK` constraint blocks lowering capacity below filled seats.
 - [x] **CLI Reporting Queries:** `ReportRepository`: allotment results (filterable by elective), unmatched students, waitlist view.
@@ -271,24 +271,31 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 
 > **Team STL rule** (also in `CLAUDE.md`): `vector`, `string`, streams, smart pointers, `map` and `set` are fine (OOP Unit 5). DS logic from the lectures must be **hand-written**: no `std::sort`, `<stack>`, `<queue>`, `std::priority_queue` or `std::list` in project logic, BST/AVL/linked list/graph built from our own nodes, and our own `HashTable` instead of `unordered_map`/`unordered_set`.
 
-### Member 1 (DS / Algorithm) — PR #22
-- 🔴 **Blocker: `HashTable` never grows.** It has a fixed capacity of 101 slots and no rehashing, so allocation fails with `HashTable is full` above 101 students. That includes the default seed plus a CSV import of just 8 rows. **Fix:** rehash (double the capacity and re-insert) when the load factor exceeds 0.7, and add a >101-student test. Details on PR #22.
-- `MatchingEngine::loadData` uses `std::unordered_set` for duplicate-ID checks. Use our own `HashTable` (or `std::set`).
-- `Stack` is a thin wrapper over `std::vector`. A top-index array or linked-node stack is easier to defend in the viva.
-- `detectBlockingPairs()` and `generateFairnessReport()` are still stubs. Have `detectBlockingPairs()` **return the count** (`int`); then `AllocationService` stores the real value in `RUN_LOG` (one-line change; currently `NULL` = not checked).
+### Member 1 — Dhruv Negi (DS / Algorithm)
+> ✅ **Already fixed for you:** the `HashTable is full` blocker. `HashTable` now rehashes at load factor 0.7 (commit `6ffdfe0` on PR #22), and allocation runs at 1,500 students. **Read `HashTable::rehash()` before the viva**: be ready to explain why the threshold is 0.7, why every key must be re-hashed (`hash = key % capacity`), and why value pointers are moved rather than copied.
 
-### Member 2 (OOP Architect)
+In priority order:
+1. **Implement `detectBlockingPairs()` and make it return the count (`int`).** This is the project's "fairness proof".
+   - Logic: for every student and every elective they ranked *above* their placement, that elective must be full of students who outrank them; otherwise it's a blocking pair. A working reference is `countBlockingPairs()` in `tests/test_allocation.cpp`. Write your own version inside the engine, using the engine's data structures.
+   - Then in `src/AllocationService.cpp`, replace `STABILITY_NOT_CHECKED` with `engine.detectBlockingPairs()`, so `RUN_LOG` records the real count instead of `NULL`.
+2. **Implement `generateFairnessReport()`:** average preference rank received, % of students who got their 1st choice, and the unmatched count.
+3. **FCFS vs stable-matching benchmark:** run a first-come-first-serve allocation and Gale–Shapley on the same data (`scripts/scale_seed_1500.sql`), and show FCFS produces blocking pairs while ours has 0.
+4. **STL rule clean-up:**
+   - `MatchingEngine::loadData` uses `std::unordered_set` for duplicate-ID checks; use your own `HashTable::contains()` instead.
+   - `Stack` is a thin wrapper over `std::vector`; give it its own storage (a top-index array or linked nodes), so "our stack" is truly ours.
+5. **DS viva prep:** complexity of the matching loop (O(N × M × log K)), plus the heap, the sparse matrix and hashing with rehash.
+
+### Member 2 — Kritika Mundepi (OOP Architect)
 - `AVLTree<T>` and `ThreadedBST<T>` built from **our own nodes**, not wrapped around `std::map`/`std::set`. BST is the faculty's main DS focus.
 - Feed the AVL waitlist's in-order traversal into `WaitlistRepository::replaceWaitlist(electiveId, orderedIds)`; it is already built and tested.
 - Model unit tests and rule-of-five for the trees, as planned.
 
-### Member 4 (Integration / ML)
+### Member 4 — Gaurang Nauriyal (Integration / ML)
 - CLI **"Run Allocation"**: replace `runAllocationStub()` with `AllocationService::runAllocation(coordinatorId, "Round 1", allowRerun)`. On `AlreadyAllottedException`, ask the coordinator to confirm, then call again with `allowRerun = true`.
 - CLI **"View allotment results" / "View waitlist"** screens: format the rows from `ReportRepository` (`allotmentResults`, `unmatchedStudents`, `waitlistFor`).
 - 1,500 × 30 system load test (`scripts/scale_seed_1500.sql` is ready), and the ML microservice.
 
-### Member 3 (Backend / DB) — remaining
-- Re-run `benchmark_db --allocate` at 1,500 once the HashTable fix lands, and record the result in `docs/PERFORMANCE.md`.
+### Member 3 — Anubhav Kiroula (Backend / DB) — remaining
 - With team agreement, drop the two redundant indexes found by profiling (see `docs/PERFORMANCE.md`).
 - Team demo rehearsal.
 

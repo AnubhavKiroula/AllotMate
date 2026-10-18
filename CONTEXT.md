@@ -27,16 +27,17 @@ list/graph from our own nodes; our own `HashTable` instead of `unordered_*`.
 - Phase 1 (all): schema, Docker, CI, `PostgresConnection`, domain models, CLI skeleton.
 - Phase 2 (M3): student/elective repos, CSV import + bulk insert, run log, pool, tests.
 - Phase 2/3 (M1, PR #22): `SparseMatrix`, `HashTable`, `Stack`, `PriorityQueue`,
-  Gale–Shapley loop. Merge conflicts and three build-blockers fixed by M3.
+  Gale–Shapley loop. Merge conflicts, three build-blockers and the HashTable
+  rehash fixed by M3.
 - Phase 3 (M3): `AllocationService` + `RunLock`, `WaitlistRepository`,
   `ReportRepository`, merge sort (replaces `std::sort`), merge-join `findAll`,
   nullable `RUN_LOG.blocking_pairs_found`, 1,500 scale seed, `benchmark_db`,
   `EXPLAIN` profiling, `docs/PERFORMANCE.md`, Phase 3 guide.
 
-## Open blockers / next work (details in README "Next Work")
-- **M1:** `HashTable` is fixed at 101 slots with no rehash, so allocation fails above
-  101 students (also after a small CSV import). Fix with rehash at load factor 0.7.
-- **M1:** `detectBlockingPairs()` should return a count (RUN_LOG stores NULL until then).
+## Open work (details in README "Next Work")
+- **M1 (Dhruv):** `detectBlockingPairs()` returning a count (RUN_LOG stores NULL
+  until then), fairness report, FCFS benchmark, STL clean-up in `loadData`/`Stack`.
+  The HashTable rehash blocker was fixed by M3 in PR #22 (`6ffdfe0`).
 - **M2:** `AVLTree` / `ThreadedBST` from own nodes; feed `WaitlistRepository`.
 - **M4:** CLI "Run Allocation" / results / waitlist screens using
   `AllocationService` and `ReportRepository`.
@@ -55,7 +56,8 @@ list/graph from our own nodes; our own `HashTable` instead of `unordered_*`.
   allocation) on Ubuntu 24.04 + libpqxx 7.8.1, `-Wall -Wextra -Werror`, PostgreSQL 16.
 - Allocation verified on the 100-student seed: 100/100 matched, 0 blocking
   pairs (oracle proven to detect a planted blocking pair).
-- 1,500 scale: import/query timings measured; full allocation blocked by HashTable.
+- 1,500 scale: full allocation ~190 ms (1,426 matched / 74 unmatched, deterministic);
+  `test_allocation` passes all 18 checks at 1,500 scale, with 0 blocking pairs.
 
 ## Useful commands
 ```bash

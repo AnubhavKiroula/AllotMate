@@ -237,11 +237,16 @@ ctest --test-dir build --output-on-failure
 
 - **Integration:** `AllocationService` works end-to-end on the seed data
   (100/100 matched; the two smallest electives fill exactly to capacity, 15/15 and 10/10).
-- **Blocker found at scale:** full allocation above 101 students fails with
-  `HashTable is full`. Member 1's `HashTable` has a fixed 101 slots and no
-  rehashing. Importing just 8 extra students reproduces it. The root cause and a
-  suggested fix are on PR #22. Because saving is one transaction, the failed run
-  wrote nothing.
+- **Scale: works at 1,500.** A full allocation takes ~190 ms (1,426 matched,
+  74 unmatched, identical every run), and `test_allocation` passes all 18
+  checks on the 1,500-student database, including **0 blocking pairs**.
+- **Bug found at scale, then fixed:** the first 1,500 run failed with
+  `HashTable is full`. The engine's `HashTable` had a fixed 101 slots and no
+  rehashing, and importing just 8 extra students onto the seed reproduced it.
+  Because saving is one transaction, the failed run wrote nothing. I fixed it in
+  PR #22 (`6ffdfe0`): `insert()` rehashes into about 2 × capacity once the load
+  factor would pass 0.7. Value pointers are *moved*, so references from `find()`
+  stay valid. Regression tests cover 1,000-key growth and a 1,500-student engine run.
 - **Bug fixed while integrating PR #22:** a half-applied change in
   `PostgresConnection.cpp` used `!envHost` on a `std::string`, which doesn't
   compile. That PR also had a duplicate `getId()` and a deleted test file
@@ -294,6 +299,14 @@ ctest --test-dir build --output-on-failure
   duplicate indexes.
 
 - **Did scale testing find anything?**
-  Yes. The engine's hash table can't grow past 101 entries, so allocation fails
-  above 101 students. We found and reproduced it, traced it to the missing rehash,
-  and reported it with a fix. That is exactly what scale testing is for.
+  Yes. The engine's hash table couldn't grow past 101 entries, so allocation
+  failed above 101 students. We reproduced it, traced it to the missing rehash,
+  and fixed it: grow at load factor 0.7 and re-hash every key, because the slot
+  index depends on capacity. Now 1,500 students allocate in about 190 ms with 0
+  blocking pairs. That is exactly what scale testing is for.
+
+- **Why move the pointers during rehash instead of copying the values?**
+  The engine keeps references returned by `find()`. Copying would put each value
+  at a new address and leave those references dangling. Moving the `unique_ptr`
+  keeps every value where it is; only the slot pointing at it changes. A test
+  writes through an old reference after several rehashes to prove it.
