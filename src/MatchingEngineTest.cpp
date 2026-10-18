@@ -220,5 +220,88 @@ int main() {
 
     std::cout << "Deterministic tie-breaking test: passed\n";
 
+    // Test HashTable growth: start at the default 101 slots and insert far
+    // more keys, so the table must rehash several times.
+    HashTable<int, int> table;
+    table.insert(1, 100);
+    int& firstValue = table.find(1); // reference taken BEFORE any growth
+
+    for (int key = 2; key <= 1000; ++key) {
+        table.insert(key, key * 100);
+    }
+
+    if (table.size() != 1000) {
+        std::cerr << "FAIL: HashTable lost entries while growing\n";
+        return 1;
+    }
+
+    for (int key = 1; key <= 1000; ++key) {
+        if (!table.contains(key) || table.find(key) != key * 100) {
+            std::cerr << "FAIL: HashTable key " << key << " wrong after rehash\n";
+            return 1;
+        }
+    }
+
+    // Rehash moves value pointers instead of copying values, so a reference
+    // taken earlier must still point at the live value.
+    firstValue = 7;
+    if (table.find(1) != 7) {
+        std::cerr << "FAIL: reference from find() went stale after rehash\n";
+        return 1;
+    }
+
+    std::cout << "HashTable growth (rehash) test: passed\n";
+
+    // Test the engine past the old 101-entry limit: 1,500 students, which
+    // used to fail with "HashTable is full".
+    std::vector<Student> manyStudents;
+    for (int id = 1; id <= 1500; ++id) {
+        Student student(id, "Student", 6.0f + (id % 400) / 100.0f);
+        student.addPreference(1 + (id % 30));
+        student.addPreference(1 + ((id + 10) % 30));
+        student.addPreference(1 + ((id + 20) % 30));
+        manyStudents.push_back(student);
+    }
+
+    std::vector<Elective> manyElectives;
+    for (int id = 1; id <= 30; ++id) {
+        manyElectives.push_back(Elective(id, "Elective", 40));
+    }
+
+    MatchingEngine largeEngine;
+    try {
+        largeEngine.loadData(manyStudents, manyElectives);
+        largeEngine.runGaleShapley();
+    } catch (const std::exception& e) {
+        std::cerr << "FAIL: 1,500-student run threw: " << e.what() << '\n';
+        return 1;
+    }
+
+    int largeAllotted = 0;
+    for (const Student& student : largeEngine.getStudents()) {
+        if (student.getStatus() == Status::ALLOTED) {
+            ++largeAllotted;
+        }
+    }
+
+    int seatsFilled = 0;
+    for (const Elective& elective : largeEngine.getElectives()) {
+        if (elective.getSeatsFilled() > elective.getCapacity()) {
+            std::cerr << "FAIL: Capacity exceeded in large run\n";
+            return 1;
+        }
+        seatsFilled += elective.getSeatsFilled();
+    }
+
+    // 30 electives x 40 seats = 1,200 seats for 1,500 students.
+    if (largeAllotted != seatsFilled || largeAllotted != 1200) {
+        std::cerr << "FAIL: Large run allotted " << largeAllotted
+                  << " students, seats filled " << seatsFilled << '\n';
+        return 1;
+    }
+
+    std::cout << "1,500-student scale test: passed (" << largeAllotted
+              << " allotted, " << (1500 - largeAllotted) << " unmatched)\n";
+
     return 0;
 }

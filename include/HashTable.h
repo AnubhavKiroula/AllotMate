@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 
 template <typename K, typename V>
 class HashTable {
@@ -19,6 +20,10 @@ private:
     int currentSize;
 
     int hash(const K& key) const;
+
+    // Grows the table to about twice its size and re-inserts every entry.
+    // Called by insert() when the load factor would pass 0.7.
+    void rehash();
 
 public:
     explicit HashTable(int capacity = 101);
@@ -54,10 +59,49 @@ int HashTable<K, V>::hash(const K& key) const {
 
 
 template <typename K, typename V>
+void HashTable<K, V>::rehash() {
+
+    // Keep the old slots and switch to a bigger, empty table.
+    std::vector<Entry> oldTable = std::move(table);
+    capacity = capacity * 2 + 1;
+    table = std::vector<Entry>(capacity);
+    currentSize = 0;
+
+    // Every key must be re-hashed, because hash() depends on capacity.
+    // The value pointers are MOVED, not copied, so a value never changes its
+    // address -- references returned earlier by find() stay valid.
+    // Deleted (tombstone) slots are simply not carried over.
+    for (Entry& old : oldTable) {
+        if (!old.occupied) {
+            continue;
+        }
+
+        int index = hash(old.key);
+        while (table[index].occupied) {
+            index = (index + 1) % capacity; // linear probing
+        }
+
+        table[index].key = old.key;
+        table[index].value = std::move(old.value);
+        table[index].occupied = true;
+        ++currentSize;
+    }
+}
+
+
+template <typename K, typename V>
 void HashTable<K, V>::insert(
     const K& key,
     const V& value
 ) {
+
+    // Grow before adding a NEW key if the table would become more than 70%
+    // full (load factor 0.7). Above that, linear probing chains get long and
+    // a fixed-size table eventually runs out of slots. Integer maths avoids
+    // floating point: (size + 1) / capacity > 0.7  <=>  (size + 1) * 10 > capacity * 7.
+    if (!contains(key) && (currentSize + 1) * 10 > capacity * 7) {
+        rehash();
+    }
 
     int index = hash(key);
     int firstDeleted = -1;
