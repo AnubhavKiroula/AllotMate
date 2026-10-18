@@ -109,6 +109,11 @@ add_executable(AllotMate
 target_link_libraries(AllotMate PRIVATE allotmate_core)
 target_compile_options(AllotMate PRIVATE ${ALLOTMATE_WARNINGS})
 
+# --- Tools: scale benchmark (not a test; timings depend on the machine) ---
+add_executable(benchmark_db tools/benchmark_db.cpp)
+target_link_libraries(benchmark_db PRIVATE allotmate_core)
+target_compile_options(benchmark_db PRIVATE ${ALLOTMATE_WARNINGS})
+
 # --- Tests (CTest) ---
 option(ALLOTMATE_BUILD_TESTS "Build AllotMate unit/integration tests" ON)
 if(ALLOTMATE_BUILD_TESTS)
