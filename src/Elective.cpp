@@ -50,3 +50,7 @@ bool Elective::operator<(const Elective& other) const {
 bool Elective::operator==(const Elective& other) const {
     return id == other.id;
 }
+
+void Elective::resetSeats(){
+    seatsFilled = 0;
+}

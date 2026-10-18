@@ -58,6 +58,7 @@ add_library(allotmate_core STATIC
     src/Coordinator.cpp
     src/Elective.cpp
     src/MatchingEngine.cpp
+    src/SparseMatrix.cpp
     src/CsvImporter.cpp
     src/PostgresStudentRepo.cpp
     src/PostgresElectiveRepo.cpp
