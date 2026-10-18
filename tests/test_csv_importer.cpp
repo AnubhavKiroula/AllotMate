@@ -13,6 +13,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "CsvImporter.h"
 #include "Elective.h"
@@ -79,6 +80,66 @@ static void testMalformedRowsAreReportedNotCrashing() {
     check(r.errors[0].lineNumber == 2, "error keeps original line number");
 }
 
+// Builds a record with only the roll number and name set (enough for sorting).
+static StudentRecord rec(const std::string& roll, const std::string& name) {
+    StudentRecord r;
+    r.rollNo = roll;
+    r.name = name;
+    return r;
+}
+
+static bool isSortedByRoll(const std::vector<StudentRecord>& rows) {
+    for (size_t i = 1; i < rows.size(); i++) {
+        if (rows[i].rollNo < rows[i - 1].rollNo) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void testMergeSortEdgeCases() {
+    std::cout << "testMergeSortEdgeCases\n";
+
+    std::vector<StudentRecord> empty;
+    CsvImporter::sortByRollNo(empty);
+    check(empty.empty(), "empty input stays empty");
+
+    std::vector<StudentRecord> one = { rec("R1", "Only") };
+    CsvImporter::sortByRollNo(one);
+    check(one.size() == 1 && one[0].rollNo == "R1", "single row unchanged");
+
+    std::vector<StudentRecord> reversed = {
+        rec("R5", "e"), rec("R4", "d"), rec("R3", "c"), rec("R2", "b"), rec("R1", "a")
+    };
+    CsvImporter::sortByRollNo(reversed);
+    check(isSortedByRoll(reversed) && reversed[0].rollNo == "R1",
+          "reverse-ordered input comes out ascending");
+
+    std::vector<StudentRecord> sorted = { rec("R1", "a"), rec("R2", "b"), rec("R3", "c") };
+    CsvImporter::sortByRollNo(sorted);
+    check(isSortedByRoll(sorted) && sorted.size() == 3, "already-sorted input stays sorted");
+}
+
+static void testSortIsStableSoFirstDuplicateWins() {
+    std::cout << "testSortIsStableSoFirstDuplicateWins\n";
+    std::stringstream csv;
+    csv << "2024CS009,Zed,7.00,CSE\n";
+    csv << "2024CS005,First Copy,8.00,CSE\n";  // first occurrence -> must be kept
+    csv << "2024CS001,Ann,9.00,IT\n";
+    csv << "2024CS005,Second Copy,8.00,CSE\n"; // later duplicate -> dropped
+
+    ImportResult r = CsvImporter::parseStream(csv);
+
+    bool keptFirst = false;
+    for (const StudentRecord& s : r.accepted) {
+        if (s.rollNo == "2024CS005") {
+            keptFirst = (s.name == "First Copy");
+        }
+    }
+    check(r.duplicateCount == 1, "one duplicate dropped");
+    check(keptFirst, "stable sort keeps the FIRST occurrence from the file");
+}
+
 static void testElectiveCapacityIsEnforced() {
     std::cout << "testElectiveCapacityIsEnforced\n";
     Elective e(1, "Advanced Machine Learning", 2);
@@ -104,6 +165,8 @@ int main() {
     testValidRowsAreAcceptedAndSorted();
     testDuplicateRollNumbersAreRejected();
     testMalformedRowsAreReportedNotCrashing();
+    testMergeSortEdgeCases();
+    testSortIsStableSoFirstDuplicateWins();
     testElectiveCapacityIsEnforced();
 
     std::cout << "===========================================\n";
