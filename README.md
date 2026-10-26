@@ -119,14 +119,6 @@ Copy the template configuration file:
 ```bash
 cp .env.example .env
 ```
-Ensure `.env` contains:
-```ini
-DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=allotmate
-DB_USER=postgres
-DB_PASSWORD=postgres
-```
 
 ### 3. Start PostgreSQL Database
 ```bash

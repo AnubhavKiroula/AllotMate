@@ -1,3 +1,4 @@
+#include <iostream>
 #include "MatchingEngine.h"
 #include "AllocationException.h"
 #include <unordered_set>
@@ -225,7 +226,43 @@ int MatchingEngine::getAssignedElectiveId(int studentId) const{
 }
 
 void MatchingEngine::detectBlockingPairs() {
-    // Phase 4: Implement blocking-pair detection later.
+    int blockingPairCount = 0;
+
+    for(const Student& student : students){
+        const int studentId = student.getId();
+        const int currentElectiveId = getAssignedElectiveId(studentId);
+
+        const std::vector<int>& preferences = student.getPreferenceList();
+
+        //check electives the student prefers over their current allocation.
+        for(int preferredElectiveId : preferences){
+            if(preferredElectiveId == currentElectiveId) break;
+
+            const Elective& elective = electiveIndex.find(preferredElectiveId);
+
+            const std::vector<int>& assignedStudents = electiveAssignments.find(preferredElectiveId);
+
+            // An elective with a free seat can form a blocking pair.
+            if(elective.hasSeat()){
+                std::cout << "Blocking Pair: Student " << studentId << ", Elective " << preferredElectiveId <<  '\n';
+                ++blockingPairCount;
+                continue;
+            }
+            
+            // If full, check whether the elective prefers this student
+            // over any currently assigned student.
+            for(int assignedId : assignedStudents){
+                const Student& assignedStudents = studentIndex.find(assignedId);
+
+                if(assignedStudents < student){
+                    std::cout << "Blocking Pair: Student " << studentId << ", Elective " << preferredElectiveId << "\n";
+                    ++blockingPairCount;
+                    break;
+                }
+            }
+        }
+    }
+    std::cout << "Total Blocking Pair: " << blockingPairCount << "\n";
 }
 
 void MatchingEngine::generateFairnessReport() {
