@@ -6,7 +6,7 @@
 ![Container](https://img.shields.io/badge/Docker-Compose-2496ED.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-> **Provably Fair Student-Elective Matching System** 
+> **Provably Fair Student-Elective Matching System**
 > Combined Data Structures (C/C++) + Object-Oriented Programming (C++) Academic Project (PBL) with real institutional applicability for 1,500+ students.
 
 ---
