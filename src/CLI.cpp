@@ -12,6 +12,14 @@
 // so the file is easy to navigate during evaluation walkthrough.
 // ============================================================
 
+// The allocation round this CLI works on. The results and
+// waitlist screens must use this same name.
+const std::string CURRENT_ROUND = "Round 1";
+
+// There is no coordinator login screen yet, so every run is
+// recorded under the first seeded coordinator (ID 1).
+const int DEMO_COORDINATOR_ID = 1;
+
 // -----------------------------------------------------------
 // Constructor: Establish DB connection using .env credentials.
 // PostgresConnection is RAII -- connection is held for CLI
@@ -70,7 +78,7 @@ void CLI::runCoordinatorMenu() {
         std::cout << "  [2] Update Elective Seat Capacity\n";
         std::cout << "  [3] View All Students\n";
         std::cout << "  [4] View Student Preferences\n";
-        std::cout << "  [5] Run Allocation (Phase 2)\n";
+        std::cout << "  [5] Run Allocation (Gale-Shapley)\n";
         std::cout << "  [0] OOP & DS Concepts Demo (Evaluator Mode)\n";
         std::cout << "  [6] Exit\n";
         printSeparator();
@@ -81,7 +89,7 @@ void CLI::runCoordinatorMenu() {
             case 2: updateElectiveCapacity();  break;
             case 3: viewAllStudents();         break;
             case 4: viewPreferences();         break;
-            case 5: runAllocationStub();       break;
+            case 5: runAllocation();           break;
             case 0: runOOPDemoScreen();        break;
             case 6: running = false;           break;
             default:
@@ -319,38 +327,79 @@ void CLI::viewPreferences() {
 }
 
 // -----------------------------------------------------------
-// runAllocationStub() -- OPTION 5
-// Shows the MatchingEngine is wired and ready.
-// Full implementation is Phase 2 work.
-// Demonstrates: MatchingEngine object creation, stub call.
+// runAllocation() -- OPTION 5
+// Runs the full allocation through AllocationService:
+//   database -> MatchingEngine (Gale-Shapley) -> database.
+// The CLI only asks questions and prints results; locking,
+// matching and saving are all done inside AllocationService.
+//
+// If the round already has results, the service refuses to
+// overwrite them (SRS edge case 7), so we ask the coordinator
+// to confirm and then run again with allowRerun = true.
 // -----------------------------------------------------------
-void CLI::runAllocationStub() {
+void CLI::runAllocation() {
     printHeader("Run Elective Allocation");
     std::cout << "\n  Allocation Engine: Gale-Shapley Stable Matching\n";
+    std::cout << "  Round: " << CURRENT_ROUND << "\n";
     printSeparator();
-    std::cout << "\n  [*] Initializing MatchingEngine...\n";
 
-    MatchingEngine engine;
+    AllocationService service(db);
 
-    std::cout << "  [*] Loading student preferences from DB...\n";
-    pqxx::result stats = db.executeQuery(
-        "SELECT "
-        "  (SELECT COUNT(*) FROM STUDENT) AS students,"
-        "  (SELECT COUNT(*) FROM ELECTIVE) AS electives,"
-        "  (SELECT COUNT(*) FROM PREFERENCE) AS preferences;"
-    );
-    std::cout << "  [*] Dataset: "
-              << stats[0]["students"].c_str()  << " students, "
-              << stats[0]["electives"].c_str() << " electives, "
-              << stats[0]["preferences"].c_str() << " ranked preferences loaded.\n";
+    try {
+        std::cout << "\n  [*] Running allocation, please wait...\n";
+        AllocationSummary summary = service.runAllocation(DEMO_COORDINATOR_ID, CURRENT_ROUND, false);
+        printAllocationSummary(summary);
 
-    std::cout << "\n  [Phase 2] Full Gale-Shapley matching loop is the Phase 2 deliverable.\n";
-    std::cout << "  [Phase 2] Algorithm will use custom SparseMatrix, PriorityQueue, and Stack.\n";
-    std::cout << "\n  Phase 1 stub: engine.runGaleShapley() -> ";
-    engine.runGaleShapley();
-    std::cout << "stub executed successfully.\n";
+    } catch (const AllocationException::AlreadyAllottedException& e) {
+        // This catch must come BEFORE the AllocationException catch below.
+        // AlreadyAllottedException is a child of AllocationException, so the
+        // parent's catch would grab it first and we could never ask to re-run.
+        std::cout << "\n  [!] " << e.what() << "\n";
+        int answer = getIntInput("\n  Re-run and REPLACE the old results? (1 = Yes, 0 = No): ");
+
+        if (answer == 1) {
+            // A new try block is needed: an exception thrown inside a catch
+            // block is not caught by the other catch blocks of the same try.
+            try {
+                std::cout << "\n  [*] Re-running allocation, please wait...\n";
+                AllocationSummary summary = service.runAllocation(DEMO_COORDINATOR_ID, CURRENT_ROUND, true);
+                printAllocationSummary(summary);
+            } catch (const AllocationException& e2) {
+                std::cerr << "\n  [ERROR] " << e2.what() << "\n";
+            }
+        } else {
+            std::cout << "\n  Cancelled. The existing results were not changed.\n";
+        }
+
+    } catch (const AllocationException& e) {
+        // Another run is already in progress, or the database failed.
+        // Nothing was saved in either case.
+        std::cerr << "\n  [ERROR] " << e.what() << "\n";
+    }
 
     waitForEnter();
+}
+
+// -----------------------------------------------------------
+// printAllocationSummary() -- helper for runAllocation()
+// Prints the numbers returned by one allocation run.
+// -----------------------------------------------------------
+void CLI::printAllocationSummary(const AllocationSummary& summary) const {
+    std::cout << "\n  [OK] Allocation complete and saved to the database.\n";
+    printSeparator();
+    std::cout << "  Total students     : " << summary.totalStudents << "\n";
+    std::cout << "  Matched            : " << summary.matched << "\n";
+    std::cout << "  Unmatched          : " << summary.unmatched << "\n";
+    std::cout << "  Run ID (RUN_LOG)   : " << summary.runId << "\n";
+    printSeparator();
+
+    // Unmatched students must be reported, never hidden (SRS edge cases 1 and 5).
+    if (summary.unmatched > 0) {
+        std::cout << "  Note: " << summary.unmatched
+                  << " student(s) did not get any of their preferred electives.\n";
+    }
+    std::cout << "  Fairness check (blocking pairs): pending -- detectBlockingPairs()\n";
+    std::cout << "  is still being implemented in MatchingEngine.\n";
 }
 
 // -----------------------------------------------------------

@@ -5,7 +5,7 @@
 #include "Student.h"
 #include "Coordinator.h"
 #include "Elective.h"
-#include "MatchingEngine.h"
+#include "AllocationService.h"
 #include "AllocationException.h"
 
 // ============================================================
@@ -37,7 +37,8 @@ private:
     void updateElectiveCapacity();  // Option 2: Set seat capacity for an elective
     void viewAllStudents();         // Option 3: List all students with CGPA from DB
     void viewPreferences();         // Option 4: View ranked preferences per student
-    void runAllocationStub();       // Option 5: Trigger MatchingEngine (stub for Phase 2)
+    void runAllocation();           // Option 5: Run Gale-Shapley via AllocationService
+    void printAllocationSummary(const AllocationSummary& summary) const;
 
     // --- Student Menu ---
     void runStudentMenu();
