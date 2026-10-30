@@ -42,6 +42,7 @@ private:
 
     // --- Report Screens ---
     void viewAllotmentResults();    // Option 6: Allotments per elective + students not allotted
+    void viewWaitlist();            // Option 7: Students waiting for a seat in one elective
     void printStudentTableHeader() const;
     void printStudentLine(const std::string& rollNo, const std::string& name,
                           double cgpa, const std::string& branch) const;

@@ -68,7 +68,7 @@ int CLI::selectRole() {
 
 // -----------------------------------------------------------
 // runCoordinatorMenu() -- Main loop for coordinator role.
-// Loops until user selects Exit (option 7).
+// Loops until user selects Exit (option 8).
 // Option 0 opens the OOP evaluation demo screen.
 // -----------------------------------------------------------
 void CLI::runCoordinatorMenu() {
@@ -81,7 +81,8 @@ void CLI::runCoordinatorMenu() {
         std::cout << "  [5] Run Allocation (Phase 2)\n";
         std::cout << "  [0] OOP & DS Concepts Demo (Evaluator Mode)\n";
         std::cout << "  [6] View Allotment Results\n";
-        std::cout << "  [7] Exit\n";
+        std::cout << "  [7] View Waitlist\n";
+        std::cout << "  [8] Exit\n";
         printSeparator();
 
         int choice = getIntInput("  Enter option: ");
@@ -93,9 +94,10 @@ void CLI::runCoordinatorMenu() {
             case 5: runAllocationStub();       break;
             case 0: runOOPDemoScreen();        break;
             case 6: viewAllotmentResults();    break;
-            case 7: running = false;           break;
+            case 7: viewWaitlist();            break;
+            case 8: running = false;           break;
             default:
-                std::cout << "\n  [!] Invalid option. Please choose 0-7.\n";
+                std::cout << "\n  [!] Invalid option. Please choose 0-8.\n";
         }
     }
 }
@@ -520,6 +522,68 @@ void CLI::printStudentLine(const std::string& rollNo, const std::string& name,
               << std::left  << std::setw(24) << name
               << std::right << std::setw(6)  << cgpa
               << "  " << branch << "\n";
+}
+
+// -----------------------------------------------------------
+// viewWaitlist() -- OPTION 7
+// Shows the students waiting for a seat in one elective,
+// front of the line first.
+// The ORDER of a waitlist is decided by the AVL tree (OOP
+// module). This screen only reads that order through
+// ReportRepository and prints it -- it never re-ranks anyone.
+// -----------------------------------------------------------
+void CLI::viewWaitlist() {
+    printHeader("Elective Waitlist");
+
+    // A waitlist always belongs to ONE elective, so 0 ("all")
+    // makes no sense here, unlike the results screen.
+    int electiveId = getIntInput("\n  Enter Elective ID (see option 1 for IDs): ");
+    if (electiveId <= 0) {
+        std::cout << "\n  [!] Please enter a valid Elective ID (1 or more).\n";
+        waitForEnter();
+        return;
+    }
+
+    try {
+        ReportRepository reports(db);
+        std::vector<WaitlistRow> waitlist = reports.waitlistFor(electiveId);
+
+        if (waitlist.empty()) {
+            std::cout << "\n  Waitlist is empty for this elective.\n";
+            std::cout << "  If you expected students here, check the Elective ID with option 1.\n";
+            waitForEnter();
+            return;
+        }
+
+        std::cout << "\n  Waitlist for Elective ID " << electiveId
+                  << " (front of the line first)\n\n";
+        std::cout << "  "
+                  << std::right << std::setw(8)  << "Position"
+                  << "  "
+                  << std::left  << std::setw(12) << "Roll No"
+                  << std::left  << std::setw(24) << "Name"
+                  << std::right << std::setw(6)  << "CGPA"
+                  << "\n";
+        printSeparator();
+
+        for (size_t i = 0; i < waitlist.size(); i++) {
+            const WaitlistRow& row = waitlist[i];
+            std::cout << "  "
+                      << std::right << std::setw(8)  << row.position
+                      << "  "
+                      << std::left  << std::setw(12) << row.rollNo
+                      << std::left  << std::setw(24) << row.studentName
+                      << std::right << std::setw(6)  << row.cgpa
+                      << "\n";
+        }
+        std::cout << "\n  Students waiting: " << waitlist.size() << "\n";
+
+    } catch (const AllocationException& e) {
+        // DatabaseException is a child of AllocationException, so this
+        // also catches every database error.
+        std::cerr << "\n  [DB ERROR] " << e.what() << "\n";
+    }
+    waitForEnter();
 }
 
 // -----------------------------------------------------------
