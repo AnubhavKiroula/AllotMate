@@ -7,6 +7,7 @@
 #include "Elective.h"
 #include "MatchingEngine.h"
 #include "AllocationException.h"
+#include "ReportRepository.h"
 
 // ============================================================
 // CLI -- Interactive Terminal Interface for AllotMate
@@ -38,6 +39,12 @@ private:
     void viewAllStudents();         // Option 3: List all students with CGPA from DB
     void viewPreferences();         // Option 4: View ranked preferences per student
     void runAllocationStub();       // Option 5: Trigger MatchingEngine (stub for Phase 2)
+
+    // --- Report Screens ---
+    void viewAllotmentResults();    // Option 6: Allotments per elective + students not allotted
+    void printStudentTableHeader() const;
+    void printStudentLine(const std::string& rollNo, const std::string& name,
+                          double cgpa, const std::string& branch) const;
 
     // --- Student Menu ---
     void runStudentMenu();

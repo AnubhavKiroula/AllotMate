@@ -12,6 +12,14 @@
 // so the file is easy to navigate during evaluation walkthrough.
 // ============================================================
 
+// The allocation round this CLI works on. The results and
+// waitlist screens must use this same name.
+const std::string CURRENT_ROUND = "Round 1";
+
+// There is no coordinator login screen yet, so every run is
+// recorded under the first seeded coordinator (ID 1).
+const int DEMO_COORDINATOR_ID = 1;
+
 // -----------------------------------------------------------
 // Constructor: Establish DB connection using .env credentials.
 // PostgresConnection is RAII -- connection is held for CLI
@@ -60,7 +68,7 @@ int CLI::selectRole() {
 
 // -----------------------------------------------------------
 // runCoordinatorMenu() -- Main loop for coordinator role.
-// Loops until user selects Exit (option 6).
+// Loops until user selects Exit (option 7).
 // Option 0 opens the OOP evaluation demo screen.
 // -----------------------------------------------------------
 void CLI::runCoordinatorMenu() {
@@ -72,7 +80,8 @@ void CLI::runCoordinatorMenu() {
         std::cout << "  [4] View Student Preferences\n";
         std::cout << "  [5] Run Allocation (Phase 2)\n";
         std::cout << "  [0] OOP & DS Concepts Demo (Evaluator Mode)\n";
-        std::cout << "  [6] Exit\n";
+        std::cout << "  [6] View Allotment Results\n";
+        std::cout << "  [7] Exit\n";
         printSeparator();
 
         int choice = getIntInput("  Enter option: ");
@@ -83,9 +92,10 @@ void CLI::runCoordinatorMenu() {
             case 4: viewPreferences();         break;
             case 5: runAllocationStub();       break;
             case 0: runOOPDemoScreen();        break;
-            case 6: running = false;           break;
+            case 6: viewAllotmentResults();    break;
+            case 7: running = false;           break;
             default:
-                std::cout << "\n  [!] Invalid option. Please choose 0-6.\n";
+                std::cout << "\n  [!] Invalid option. Please choose 0-7.\n";
         }
     }
 }
@@ -414,6 +424,102 @@ void CLI::viewStudentStatus() {
         std::cerr << "\n  [DB ERROR] " << e.what() << "\n";
     }
     waitForEnter();
+}
+
+// -----------------------------------------------------------
+// viewAllotmentResults() -- OPTION 6
+// Shows who got which elective in CURRENT_ROUND, grouped by
+// elective (best CGPA first), then the students who were not
+// allotted any elective.
+// All SQL lives in ReportRepository -- the CLI only prints the
+// rows it gets back (Single Responsibility).
+// -----------------------------------------------------------
+void CLI::viewAllotmentResults() {
+    printHeader("Allotment Results -- " + CURRENT_ROUND);
+
+    // 1,500 rows at once is unreadable, so allow filtering by elective.
+    int electiveId = getIntInput("\n  Enter Elective ID to filter (0 = all electives): ");
+    if (electiveId < 0) {
+        std::cout << "\n  [!] Elective ID cannot be negative.\n";
+        waitForEnter();
+        return;
+    }
+
+    try {
+        ReportRepository reports(db);
+        std::vector<AllotmentRow> results = reports.allotmentResults(CURRENT_ROUND, electiveId);
+
+        if (results.empty()) {
+            if (electiveId == 0) {
+                std::cout << "\n  No results yet. Run allocation first (option 5).\n";
+            } else {
+                std::cout << "\n  No students are allotted to Elective ID " << electiveId
+                          << " in " << CURRENT_ROUND << ".\n";
+                std::cout << "  Check the ID (option 1), or run allocation first (option 5).\n";
+            }
+            waitForEnter();
+            return;
+        }
+
+        // Rows come back sorted by elective, so we print a new heading
+        // every time the elective ID changes from the previous row.
+        int previousElectiveId = -1;
+        for (size_t i = 0; i < results.size(); i++) {
+            const AllotmentRow& row = results[i];
+            if (row.electiveId != previousElectiveId) {
+                std::cout << "\n  Elective " << row.electiveId << ": " << row.electiveName << "\n";
+                printStudentTableHeader();
+                previousElectiveId = row.electiveId;
+            }
+            printStudentLine(row.rollNo, row.studentName, row.cgpa, row.branch);
+        }
+        std::cout << "\n  Students allotted: " << results.size() << "\n";
+
+        // Students without an elective must be shown, never hidden
+        // (SRS edge cases 1 and 5).
+        std::vector<StudentRow> unmatched = reports.unmatchedStudents(CURRENT_ROUND);
+        std::cout << "\n  Not allotted (no elective in " << CURRENT_ROUND << ")\n";
+        if (unmatched.empty()) {
+            std::cout << "  None -- every student got an elective.\n";
+        } else {
+            printStudentTableHeader();
+            for (size_t i = 0; i < unmatched.size(); i++) {
+                const StudentRow& student = unmatched[i];
+                printStudentLine(student.rollNo, student.studentName, student.cgpa, student.branch);
+            }
+            std::cout << "\n  Students not allotted: " << unmatched.size() << "\n";
+        }
+
+    } catch (const AllocationException& e) {
+        // DatabaseException is a child of AllocationException, so this
+        // also catches every database error.
+        std::cerr << "\n  [DB ERROR] " << e.what() << "\n";
+    }
+    waitForEnter();
+}
+
+// -----------------------------------------------------------
+// printStudentTableHeader() / printStudentLine()
+// Helpers for viewAllotmentResults(). Both tables (allotted and
+// not allotted) use the same columns, so the layout lives here
+// once instead of being copied twice.
+// -----------------------------------------------------------
+void CLI::printStudentTableHeader() const {
+    std::cout << "  "
+              << std::left  << std::setw(12) << "Roll No"
+              << std::left  << std::setw(24) << "Name"
+              << std::right << std::setw(6)  << "CGPA"
+              << "  " << "Branch" << "\n";
+    printSeparator();
+}
+
+void CLI::printStudentLine(const std::string& rollNo, const std::string& name,
+                           double cgpa, const std::string& branch) const {
+    std::cout << "  "
+              << std::left  << std::setw(12) << rollNo
+              << std::left  << std::setw(24) << name
+              << std::right << std::setw(6)  << cgpa
+              << "  " << branch << "\n";
 }
 
 // -----------------------------------------------------------
