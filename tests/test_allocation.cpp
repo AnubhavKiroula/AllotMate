@@ -165,11 +165,17 @@ static void testRunProducesValidStableResult(PostgresConnection& conn) {
           "no blocking pairs in the saved result (stable matching)");
 
     pqxx::result logRow = conn.executeQuery(
-        "SELECT blocking_pairs_found IS NULL AS unchecked, outcome_summary FROM RUN_LOG "
-        "WHERE run_id = " + std::to_string(summary.runId) + ";");
+    "SELECT blocking_pairs_found, outcome_summary FROM RUN_LOG "
+    "WHERE run_id = " + std::to_string(summary.runId) + ";");
+
     check(logRow.size() == 1, "run is recorded in RUN_LOG");
-    check(logRow.size() == 1 && logRow[0]["unchecked"].as<bool>(),
-          "RUN_LOG marks stability as not checked (NULL), not a fake 0");
+
+    check(
+        logRow.size() == 1 &&
+        !logRow[0]["blocking_pairs_found"].is_null() &&
+        logRow[0]["blocking_pairs_found"].as<int>() == 0,
+        "RUN_LOG stores the actual blocking-pair count (0 for stable matching)"
+    );
 }
 
 // Proves the stability oracle is not vacuous: break a stable result on purpose

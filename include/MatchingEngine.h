@@ -32,7 +32,7 @@ class MatchingEngine {
         );
 
         void runGaleShapley();
-        void detectBlockingPairs();
+        int detectBlockingPairs() const;
         void generateFairnessReport();
 
         const std::vector<Student>& getStudents() const;
