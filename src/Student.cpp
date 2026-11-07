@@ -22,10 +22,12 @@ void Student::addPreference(int electiveID){
     preferenceList.push_back(electiveID);
 }
 
-void Student::displayProfile(){
-    cout << "Student ID: " << id << endl;
-    cout << "Name :" << name << endl;
-    cout << "CGPA : " << cgpa << endl;
+void Student::displayProfile() {
+    cout << "[Student] ID: " << id
+         << " | Name: " << name
+         << " | CGPA: " << cgpa
+         << " | Status: " << (status == Status::UNMATCHED ? "UNMATCHED" : "ALLOTED")
+         << " | Preferences: " << preferenceList.size() << endl;
 }
 bool Student::operator<(const Student& other) const {
 
