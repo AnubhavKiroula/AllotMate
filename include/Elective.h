@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include "AVLTree.h"
+#include "Student.h"
 using namespace std;
 
 class Elective{
@@ -10,7 +12,8 @@ class Elective{
         string name;
         int capacity;
         int seatsFilled=0;
-
+        AVLTree<Student> waitlist;
+        
     public:
         Elective(int id, const string& name, int capacity);
 
@@ -25,4 +28,8 @@ class Elective{
         bool operator==(const Elective& other) const;
         void allocateSeat();
         void resetSeats();
+        void addToWaitlist(const Student& s);
+        bool promoteNext(Student& promoted);
+        int waitlistSize() const;
+        void releaseSeat();
 };
