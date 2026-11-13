@@ -13,6 +13,7 @@ class AVLTree {
     };
 
     Node* root = nullptr;
+    int count = 0;
 
     static int height(Node* n) { return n ? n->height : 0; }
     static int balanceFactor(Node* n) { return n ? height(n->left) - height(n->right) : 0; }
@@ -38,25 +39,48 @@ class AVLTree {
         return y;
     }
 
+    // Used by remove: fixes imbalance on the way back up
+    Node* rebalance(Node* n) {
+        update(n);
+        int bf = balanceFactor(n);
+        if (bf > 1) {
+            if (balanceFactor(n->left) < 0) n->left = rotateLeft(n->left);   // LR
+            return rotateRight(n);                                           // LL
+        }
+        if (bf < -1) {
+            if (balanceFactor(n->right) > 0) n->right = rotateRight(n->right); // RL
+            return rotateLeft(n);                                              // RR
+        }
+        return n;
+    }
+
     Node* insert(Node* n, const T& v) {
         if (!n) return new Node(v);
         if (v < n->data) n->left = insert(n->left, v);
         else n->right = insert(n->right, v);
+        return rebalance(n);
+    }
 
-        update(n);
-        int bf = balanceFactor(n);
-
-        if (bf > 1 && v < n->left->data) return rotateRight(n);            // LL
-        if (bf < -1 && !(v < n->right->data)) return rotateLeft(n);        // RR
-        if (bf > 1 && !(v < n->left->data)) {                              // LR
-            n->left = rotateLeft(n->left);
-            return rotateRight(n);
+    Node* remove(Node* n, const T& v, bool& removed) {
+        if (!n) return nullptr;
+        if (v < n->data) {
+            n->left = remove(n->left, v, removed);
+        } else if (n->data < v) {
+            n->right = remove(n->right, v, removed);
+        } else {
+            removed = true;
+            if (!n->left || !n->right) {              // 0 or 1 child
+                Node* child = n->left ? n->left : n->right;
+                delete n;
+                return child;
+            }
+            Node* m = n->right;                        // 2 children: use inorder successor
+            while (m->left) m = m->left;
+            n->data = m->data;
+            bool ignored = false;
+            n->right = remove(n->right, m->data, ignored);
         }
-        if (bf < -1 && v < n->right->data) {                               // RL
-            n->right = rotateRight(n->right);
-            return rotateLeft(n);
-        }
-        return n;
+        return rebalance(n);
     }
 
     void destroy(Node* n) {
@@ -77,11 +101,30 @@ class AVLTree {
 public:
     AVLTree() = default;
     ~AVLTree() { destroy(root); }
-    AVLTree(const AVLTree&) = delete;             // copy/move added later (Rule of 5)
+    AVLTree(const AVLTree&) = delete;             // Rule of 5 comes later
     AVLTree& operator=(const AVLTree&) = delete;
 
-    void insert(const T& v) { root = insert(root, v); }
+    void insert(const T& v) { root = insert(root, v); ++count; }
+
+    bool remove(const T& v) {
+        bool removed = false;
+        root = remove(root, v, removed);
+        if (removed) --count;
+        return removed;
+    }
+
+    // Takes out the highest-priority element. Returns false if the tree is empty.
+    bool extractMax(T& out) {
+        if (!root) return false;
+        Node* n = root;
+        while (n->right) n = n->right;
+        out = n->data;
+        remove(out);
+        return true;
+    }
+
     bool empty() const { return root == nullptr; }
+    int size() const { return count; }
     int treeHeight() const { return height(root); }
 
     template <typename F>
