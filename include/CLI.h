@@ -63,6 +63,8 @@ private:
     void demoPolymorphism();        // Show Person* dispatching to Student & Coordinator
     void demoExceptionHierarchy();  // Throw and catch all 4 AllocationException sub-types
     void demoOperatorOverloading(); // Compare two students by CGPA using operator<
+    void demoMeritRanking();        // ThreadedBST: rank live students by CGPA without a stack
+    void demoAvlWaitlist();         // AVLTree: waitlist promotes the highest-priority student
 
     // --- Utility ---
     void printHeader(const std::string& title) const;
