@@ -144,14 +144,7 @@ Copy the template configuration file:
 ```bash
 cp .env.example .env
 ```
-Ensure `.env` contains:
-```ini
-DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=allotmate
-DB_USER=postgres
-DB_PASSWORD=postgres
-```
+The template already holds the defaults for the local Docker database (port `5433`, so it does not clash with a locally installed PostgreSQL on `5432`). Change them only if your database differs. `.env` is git-ignored — never commit it.
 
 ### 3. Start PostgreSQL Database
 ```bash
@@ -178,7 +171,7 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
   ```bash
   docker exec -it allotmate_postgres psql -U postgres -d allotmate
   ```
-- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, Username/Password `postgres`.
+- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, and the user/password from your `.env`.
 
 ---
 
