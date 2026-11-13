@@ -5,8 +5,11 @@
 #include "Student.h"
 #include "Coordinator.h"
 #include "Elective.h"
-#include "MatchingEngine.h"
+#include "AllocationService.h"
 #include "AllocationException.h"
+#include "ReportRepository.h"
+#include "CsvImporter.h"
+#include "PostgresStudentRepo.h"
 
 // ============================================================
 // CLI -- Interactive Terminal Interface for AllotMate
@@ -37,7 +40,18 @@ private:
     void updateElectiveCapacity();  // Option 2: Set seat capacity for an elective
     void viewAllStudents();         // Option 3: List all students with CGPA from DB
     void viewPreferences();         // Option 4: View ranked preferences per student
-    void runAllocationStub();       // Option 5: Trigger MatchingEngine (stub for Phase 2)
+    void runAllocation();           // Option 5: Run Gale-Shapley via AllocationService
+    void printAllocationSummary(const AllocationSummary& summary) const;
+
+    // --- Report Screens ---
+    void viewAllotmentResults();    // Option 6: Allotments per elective + students not allotted
+    void viewWaitlist();            // Option 7: Students waiting for a seat in one elective
+    void printStudentTableHeader() const;
+    void printStudentLine(const std::string& rollNo, const std::string& name,
+                          double cgpa, const std::string& branch) const;
+
+    // --- Data Import ---
+    void importStudentsFromCsv();   // Option 8: Validate a student CSV, then insert after confirmation
 
     // --- Student Menu ---
     void runStudentMenu();
