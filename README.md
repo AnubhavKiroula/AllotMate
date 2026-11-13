@@ -1,19 +1,43 @@
-# AllotMate — Fair Elective & Lab-Batch Allocation Engine
+<p align="center">
+  <img src="docs/assets/logo.svg" width="128" height="128" alt="AllotMate logo: a stable matching between students and elective seats">
+</p>
 
-[![CI Build Gate](https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml/badge.svg)](https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml)
-![Language](https://img.shields.io/badge/Language-C%2B%2B17-blue.svg)
-![Database](https://img.shields.io/badge/Database-PostgreSQL%2016-336791.svg)
-![Container](https://img.shields.io/badge/Docker-Compose-2496ED.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+<h1 align="center">AllotMate</h1>
 
-> **Provably Fair Student-Elective Matching System**  
+<p align="center"><b>Fair Elective Allocation Engine.</b><br>Students propose. Gale–Shapley decides. Every run is audited.</p>
+
+<p align="center">
+  <!-- Build and project -->
+  <a href="https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml"><img src="https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Build Gate"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
+  <a href="docs/06_VERSION-CONTROL.md"><img src="https://img.shields.io/badge/Conventional_Commits-1.0.0-fe5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits"></a>
+</p>
+
+<p align="center">
+  <!-- Stack -->
+  <a href="CMakeLists.txt"><img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white" alt="C++17"></a>
+  <a href="CMakeLists.txt"><img src="https://img.shields.io/badge/CMake-%E2%89%A53.16-064F8C?logo=cmake&logoColor=white" alt="CMake 3.16 or newer"></a>
+  <a href="docs/DB-SETUP.md"><img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16"></a>
+  <a href="include/PostgresConnection.h"><img src="https://img.shields.io/badge/libpqxx-RAII_wrapper-336791" alt="libpqxx behind an RAII wrapper"></a>
+  <a href="docker-compose.yml"><img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose"></a>
+  <a href="tests"><img src="https://img.shields.io/badge/tested_with-CTest-064F8C?logo=cmake&logoColor=white" alt="Tested with CTest"></a>
+</p>
+
+<p align="center">
+  <!-- Project -->
+  <a href="src/MatchingEngine.cpp"><img src="https://img.shields.io/badge/algorithm-Gale%E2%80%93Shapley-5FD4AE" alt="Gale–Shapley stable matching"></a>
+  <a href="docs/PERFORMANCE.md"><img src="https://img.shields.io/badge/scale-1%2C500_students-25407F" alt="Tested at 1,500 students"></a>
+  <a href="docs/00_PROJECT-OVERVIEW-AND-DIAGRAMS.md"><img src="https://img.shields.io/badge/PBL-DS_%2B_OOP-orange" alt="PBL: Data Structures + OOP"></a>
+</p>
+
+> **Provably Fair Student-Elective Matching System**
 > Combined Data Structures (C/C++) + Object-Oriented Programming (C++) Academic Project (PBL) with real institutional applicability for 1,500+ students.
 
 ---
 
 ## 📌 Problem & Solution Overview
 
-- **The Problem:** Every semester, 1,500+ students rank elective courses and lab batches against strict seat limits. Existing manual or First-Come-First-Serve (FCFS) allocations reward speed or luck, are vulnerable to human bias, and offer **no stability guarantee** (students and electives may form blocking pairs who both prefer to swap).
+- **The Problem:** Every semester, 1,500+ students rank elective courses against strict seat limits. Existing manual or First-Come-First-Serve (FCFS) allocations reward speed or luck, are vulnerable to human bias, and offer **no stability guarantee** (students and electives may form blocking pairs who both prefer to swap).
 - **The Solution:** **AllotMate** adapts the **Gale–Shapley stable matching algorithm** (student-proposing variant) with seat capacities, custom data structures (Sparse Matrix, Priority Queue, AVL Trees, Threaded BST, Hash Tables), an RAII-compliant PostgreSQL persistence layer via `libpqxx`, and an optional decoupled ML forecasting microservice.
 
 ---
@@ -32,6 +56,7 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 - [`08_PHASE-2-EVALUATION-GUIDE.md`](docs/08_PHASE-2-EVALUATION-GUIDE.md) — Phase 2 Evaluation Guide (Backend & Database) & Viva Q&A
 - [`09_PHASE-3-EVALUATION-GUIDE.md`](docs/09_PHASE-3-EVALUATION-GUIDE.md) — Phase 3 Evaluation Guide (Integration, Scale & Safety) & Viva Q&A
 - [`PERFORMANCE.md`](docs/PERFORMANCE.md) — Measured 1,500-scale benchmarks & `EXPLAIN ANALYZE` index profiling
+- [`LOAD-TEST.md`](docs/LOAD-TEST.md) — End-to-end 1,500 × 30 load test through the CLI (correctness + timings)
 - [`DB-SETUP.md`](docs/DB-SETUP.md) — Database Quickstart & pgAdmin Setup Guide
 
 ---
@@ -119,14 +144,7 @@ Copy the template configuration file:
 ```bash
 cp .env.example .env
 ```
-Ensure `.env` contains:
-```ini
-DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=allotmate
-DB_USER=postgres
-DB_PASSWORD=postgres
-```
+The template already holds the defaults for the local Docker database (port `5433`, so it does not clash with a locally installed PostgreSQL on `5432`). Change them only if your database differs. `.env` is git-ignored — never commit it.
 
 ### 3. Start PostgreSQL Database
 ```bash
@@ -153,7 +171,7 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
   ```bash
   docker exec -it allotmate_postgres psql -U postgres -d allotmate
   ```
-- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, Username/Password `postgres`.
+- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, and the user/password from your `.env`.
 
 ---
 
@@ -254,15 +272,20 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 - [x] **CLI Menu Specifications:** Defined numbered menu flows for coordinator and student roles (`docs/04_UIUX.md`).
 - [x] **Git Workflow Adherence:** Established PR Markdown templates and branch conventions.
 
-#### 🔹 Phase 2: CLI Implementation & Test Harness (30 Marks) — `IN PROGRESS`
-- [ ] **CLI Admin Tool:** Implement interactive terminal interface covering main menu states (Import, Set Capacities, Run Allocation, View Results, View Waitlist).
-- [ ] **Automated CTest Suite:** Scaffold CTest unit testing framework integrated with CMake.
-- [ ] **Isolated ML Microservice Scaffold:** Set up Python FastAPI microservice under `/ml-service` with its own Dockerfile and `requirements.txt`.
-- [ ] **Demand Forecasting Model:** Implement regression/random-forest demand forecasting endpoint (`POST /forecast/demand`).
+#### 🔹 Phase 2: CLI Implementation & Test Harness (30 Marks) — `CLI COMPLETED · ML DEFERRED`
+- [x] **CLI Admin Tool:** All coordinator menu states are implemented in `src/CLI.cpp` (PR #29 and `feature/m4-import-csv-load-test`):
+  - **[5] Run Allocation:** calls `AllocationService::runAllocation`. If the round is already allocated, it asks the coordinator to confirm before replacing the results (SRS edge case 7), and handles "another run in progress".
+  - **[6] View Allotment Results:** results grouped by elective, best CGPA first, with an elective filter (`0` = all) and a "Not allotted" list (SRS edge cases 1 and 5). All SQL stays in `ReportRepository`.
+  - **[7] View Waitlist:** a waitlist in front-of-line order from `ReportRepository::waitlistFor`. It never re-orders students; the AVL tree decides the order.
+  - **[8] Import Students from CSV:** validates the file with `CsvImporter`, shows each rejected row with its line number and reason, and inserts with `PostgresStudentRepo::bulkInsert` only after confirmation. Roll numbers already in the database are skipped and reported.
+  - **[2] Set Capacities** existed from Phase 1.
+- [x] **Automated CTest Suite:** Built by Member 3 (`tests/`, 4 suites). Member 4 runs it after every CLI change.
+- [ ] **Isolated ML Microservice Scaffold:** `DEFERRED`. Postponed until the team agrees on a scope (see Next Work).
+- [ ] **Demand Forecasting Model:** `DEFERRED`. The database holds one semester only, so there is no history to train on yet.
 
-#### 🔹 Phase 3: End-to-End System Testing & Demo Polish (50 Marks) — `UPCOMING`
-- [ ] **Collusion Detection Endpoint:** Implement clustering algorithm (`POST /forecast/collusion-check`) flagging suspicious identical preference patterns.
-- [ ] **System-Wide Load Testing:** Run end-to-end load tests on 1,500 students × 30 electives; log runtime statistics.
+#### 🔹 Phase 3: End-to-End System Testing & Demo Polish (50 Marks) — `IN PROGRESS`
+- [ ] **Collusion Detection Endpoint:** `DEFERRED` together with the ML microservice.
+- [x] **System-Wide Load Testing:** 1,500 students × 30 electives, run through the CLI. Every run gives the same result: 1,426 matched, 74 unmatched, 0 electives over capacity. `test_allocation` passes all 18 checks at this scale. A full allocation takes under 1 s on a Windows laptop. Details and timings are in [`docs/LOAD-TEST.md`](docs/LOAD-TEST.md).
 - [ ] **Full Team Demo Rehearsal:** Coordinate live presentation flow, backup output recording, and panel Q&A preparation.
 
 ---
@@ -291,9 +314,14 @@ In priority order:
 - Model unit tests and rule-of-five for the trees, as planned.
 
 ### Member 4 — Gaurang Nauriyal (Integration / ML)
-- CLI **"Run Allocation"**: replace `runAllocationStub()` with `AllocationService::runAllocation(coordinatorId, "Round 1", allowRerun)`. On `AlreadyAllottedException`, ask the coordinator to confirm, then call again with `allowRerun = true`.
-- CLI **"View allotment results" / "View waitlist"** screens: format the rows from `ReportRepository` (`allotmentResults`, `unmatchedStudents`, `waitlistFor`).
-- 1,500 × 30 system load test (`scripts/scale_seed_1500.sql` is ready), and the ML microservice.
+> ✅ **Done:** CLI screens Run Allocation, View Results, View Waitlist and Import CSV, plus the 1,500 × 30 load test ([`docs/LOAD-TEST.md`](docs/LOAD-TEST.md)).
+
+Remaining:
+1. **Fairness report in the CLI:** once Member 1's `detectBlockingPairs()` returns a count, show it in the Run Allocation summary. It currently prints "pending".
+2. **Re-test View Waitlist** once Member 2's AVL waitlist is connected to `WaitlistRepository`. Until then the waitlist table is empty.
+3. **ML scope decision** (with the team or mentor): the collusion check works on current preference data, while demand forecasting would need past-semester data.
+4. **Found in the load test:** `test_db_layer` hard-codes roll numbers from the 100-student seed, so 2 checks fail on the 1,500-student dataset. The code under test is fine; discuss the test fix with Member 3.
+5. **Team demo rehearsal** and viva prep.
 
 ### Member 3 — Anubhav Kiroula (Backend / DB) — remaining
 - With team agreement, drop the two redundant indexes found by profiling (see `docs/PERFORMANCE.md`).
@@ -320,6 +348,7 @@ AllotMate/
 │   ├── 08_PHASE-2-EVALUATION-GUIDE.md
 │   ├── 09_PHASE-3-EVALUATION-GUIDE.md
 │   ├── DB-SETUP.md              # Database & pgAdmin setup guide
+│   ├── LOAD-TEST.md             # 1,500 x 30 load test through the CLI
 │   └── PERFORMANCE.md           # Measured 1,500-scale benchmarks & EXPLAIN plans
 ├── include/                     # C++ header files & interfaces
 │   ├── AllocationException.h    # Custom domain & database exception hierarchy
