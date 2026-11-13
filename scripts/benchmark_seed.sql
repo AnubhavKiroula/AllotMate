@@ -1,12 +1,17 @@
--- AllotMate Benchmark Dataset Generator
--- Usage: psql -v student_count=100 -f benchmark_seed.sql
+-- AllotMate Benchmark Dataset Generator (input for tools/benchmark_matching.cpp)
+--
+-- WARNING: this REPLACES all data (same TRUNCATE as sql/02_seed_data.sql).
+-- It lives in scripts/ (not sql/) so Docker never runs it automatically:
+-- it needs the student_count variable, which Docker cannot pass.
+--
+--   Load:    docker exec -i allotmate_postgres psql -U postgres -d allotmate -v student_count=1500 < scripts/benchmark_seed.sql
+--   Restore: docker exec -i allotmate_postgres psql -U postgres -d allotmate < sql/02_seed_data.sql
 
 \set ON_ERROR_STOP on
 
--- Validate input
+-- Validate input (stops here, before the TRUNCATE, if student_count is missing)
 SELECT :student_count AS requested_student_count;
 
--- Clear benchmark database data only
 TRUNCATE TABLE
     RUN_LOG,
     WAITLIST,
@@ -16,6 +21,12 @@ TRUNCATE TABLE
     ELECTIVE,
     STUDENT
 RESTART IDENTITY CASCADE;
+
+-- Coordinators (same as the default seed). The CLI logs every run under
+-- coordinator 1, and RUN_LOG has a foreign key to COORDINATOR.
+INSERT INTO COORDINATOR (name, department, username, password_hash) VALUES
+('Dr. Rajesh Sharma', 'Computer Science & Engineering', 'rsharma', '$2a$12$e8x/yUom7LgU4k5q3C3/jOXp5x5w9u2K7GqLzM1s9nFkUjV1WpP4G'),
+('Dr. Priya Nair', 'Electronics & Communication', 'pnair', '$2a$12$e8x/yUom7LgU4k5q3C3/jOXp5x5w9u2K7GqLzM1s9nFkUjV1WpP4G');
 
 -- Insert six electives.
 -- Total capacity is approximately 80% of student count.
