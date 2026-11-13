@@ -8,6 +8,13 @@ target_link_libraries(test_csv_importer PRIVATE allotmate_core)
 target_compile_options(test_csv_importer PRIVATE ${ALLOTMATE_WARNINGS})
 add_test(NAME csv_importer COMMAND test_csv_importer)
 
+# Model + tree tests (Member 2): Student/Elective edge cases, AVLTree and
+# ThreadedBST. No database required.
+add_executable(test_models test_models.cpp)
+target_link_libraries(test_models PRIVATE allotmate_core)
+target_compile_options(test_models PRIVATE ${ALLOTMATE_WARNINGS})
+add_test(NAME models COMMAND test_models)
+
 # Matching engine tests (Member 1). The source lives in src/, as written by its
 # owner; it is not part of allotmate_core because it has its own main().
 add_executable(MatchingEngineTest ${PROJECT_SOURCE_DIR}/src/MatchingEngineTest.cpp)
@@ -30,3 +37,12 @@ target_link_libraries(test_allocation PRIVATE allotmate_core)
 target_compile_options(test_allocation PRIVATE ${ALLOTMATE_WARNINGS})
 add_test(NAME allocation COMMAND test_allocation)
 set_tests_properties(allocation PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Data-structure demos (Member 2). They print a walkthrough for the viva and
+# are not tests, but CI compiles them so a change that breaks them fails the build.
+foreach(demo avl_demo avl_student_demo avl_rule5_demo elective_waitlist_demo
+             threaded_demo threaded_rule5_demo)
+    add_executable(${demo} ${demo}.cpp)
+    target_link_libraries(${demo} PRIVATE allotmate_core)
+    target_compile_options(${demo} PRIVATE ${ALLOTMATE_WARNINGS})
+endforeach()
