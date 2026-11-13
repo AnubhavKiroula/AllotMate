@@ -7,9 +7,12 @@
 // Prints students in merit order using the stack-less threaded traversal.
 // Inorder gives ascending order (lowest merit first), so we collect and
 // print in reverse to show rank 1 (highest CGPA, lower id on ties) first.
-class FairnessReport {
+// This is a merit ranking, not the FR-6 fairness report
+// (that one is MatchingEngine::generateFairnessReport()).
+class MeritRankingReport {
 public:
-    static void print(const std::vector<Student>& students) {
+    // Prints the top `limit` students, or all of them when limit <= 0.
+    static void print(const std::vector<Student>& students, int limit = 0) {
         ThreadedBST<Student> tree;
         for (const Student& s : students) tree.insert(s);
 
@@ -19,7 +22,9 @@ public:
         std::cout << "=== Merit Ranking Report ===\n";
         int rank = 1;
         for (auto it = ordered.rbegin(); it != ordered.rend(); ++it, ++rank) {
+            if (limit > 0 && rank > limit) break;
             std::cout << "Rank " << rank << ": ID " << it->getId()
+                      << " | " << it->getName()
                       << " | CGPA " << it->getCgpa() << "\n";
         }
         std::cout << "Total students: " << tree.size() << "\n";
