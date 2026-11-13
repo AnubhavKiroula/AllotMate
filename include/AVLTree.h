@@ -1,7 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <iostream>
-
+#include <utility>
 template <typename T>
 class AVLTree {
     struct Node {
@@ -82,7 +82,14 @@ class AVLTree {
         }
         return rebalance(n);
     }
-
+        Node* clone(Node* n) const {
+        if (!n) return nullptr;
+        Node* c = new Node(n->data);
+        c->height = n->height;
+        c->left = clone(n->left);
+        c->right = clone(n->right);
+        return c;
+    }
     void destroy(Node* n) {
         if (!n) return;
         destroy(n->left);
@@ -101,9 +108,36 @@ class AVLTree {
 public:
     AVLTree() = default;
     ~AVLTree() { destroy(root); }
-    AVLTree(const AVLTree&) = delete;             // Rule of 5 comes later
-    AVLTree& operator=(const AVLTree&) = delete;
+        // Copy constructor: deep copy
+    AVLTree(const AVLTree& other) : root(clone(other.root)), count(other.count) {}
 
+    // Copy assignment: copy-and-swap (safe for self-assignment)
+    AVLTree& operator=(const AVLTree& other) {
+        if (this != &other) {
+            AVLTree temp(other);
+            std::swap(root, temp.root);
+            std::swap(count, temp.count);
+        }
+        return *this;
+    }
+
+    // Move constructor: steal the nodes, leave the source empty
+    AVLTree(AVLTree&& other) noexcept : root(other.root), count(other.count) {
+        other.root = nullptr;
+        other.count = 0;
+    }
+
+    // Move assignment: free ours, then steal
+    AVLTree& operator=(AVLTree&& other) noexcept {
+        if (this != &other) {
+            destroy(root);
+            root = other.root;
+            count = other.count;
+            other.root = nullptr;
+            other.count = 0;
+        }
+        return *this;
+    }
     void insert(const T& v) { root = insert(root, v); ++count; }
 
     bool remove(const T& v) {

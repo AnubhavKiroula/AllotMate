@@ -19,10 +19,10 @@ void Coordinator::approveAllocation(Elective& elective){
          << elective.getName() << endl;
 }
 
-void Coordinator::displayProfile(){
-    cout << "Coordinator ID: " << id << endl;
-    cout << "Name: " << name << endl;
-    cout << "Department: " << department << endl;
+void Coordinator::displayProfile() {
+    cout << "[Coordinator] ID: " << id
+         << " | Name: " << name
+         << " | Department: " << department << endl;
 }
 
 const string& Coordinator::getDepartment() const{
