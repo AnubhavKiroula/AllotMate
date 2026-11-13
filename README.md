@@ -1,10 +1,34 @@
-# AllotMate — Fair Elective & Lab-Batch Allocation Engine
+<p align="center">
+  <img src="docs/assets/logo.svg" width="128" height="128" alt="AllotMate logo: a stable matching between students and elective seats">
+</p>
 
-[![CI Build Gate](https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml/badge.svg)](https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml)
-![Language](https://img.shields.io/badge/Language-C%2B%2B17-blue.svg)
-![Database](https://img.shields.io/badge/Database-PostgreSQL%2016-336791.svg)
-![Container](https://img.shields.io/badge/Docker-Compose-2496ED.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+<h1 align="center">AllotMate</h1>
+
+<p align="center"><b>Fair Elective Allocation Engine.</b><br>Students propose. Gale–Shapley decides. Every run is audited.</p>
+
+<p align="center">
+  <!-- Build and project -->
+  <a href="https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml"><img src="https://github.com/AnubhavKiroula/AllotMate/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Build Gate"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
+  <a href="docs/06_VERSION-CONTROL.md"><img src="https://img.shields.io/badge/Conventional_Commits-1.0.0-fe5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits"></a>
+</p>
+
+<p align="center">
+  <!-- Stack -->
+  <a href="CMakeLists.txt"><img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white" alt="C++17"></a>
+  <a href="CMakeLists.txt"><img src="https://img.shields.io/badge/CMake-%E2%89%A53.16-064F8C?logo=cmake&logoColor=white" alt="CMake 3.16 or newer"></a>
+  <a href="docs/DB-SETUP.md"><img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 16"></a>
+  <a href="include/PostgresConnection.h"><img src="https://img.shields.io/badge/libpqxx-RAII_wrapper-336791" alt="libpqxx behind an RAII wrapper"></a>
+  <a href="docker-compose.yml"><img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose"></a>
+  <a href="tests"><img src="https://img.shields.io/badge/tested_with-CTest-064F8C?logo=cmake&logoColor=white" alt="Tested with CTest"></a>
+</p>
+
+<p align="center">
+  <!-- Project -->
+  <a href="src/MatchingEngine.cpp"><img src="https://img.shields.io/badge/algorithm-Gale%E2%80%93Shapley-5FD4AE" alt="Gale–Shapley stable matching"></a>
+  <a href="docs/PERFORMANCE.md"><img src="https://img.shields.io/badge/scale-1%2C500_students-25407F" alt="Tested at 1,500 students"></a>
+  <a href="docs/00_PROJECT-OVERVIEW-AND-DIAGRAMS.md"><img src="https://img.shields.io/badge/PBL-DS_%2B_OOP-orange" alt="PBL: Data Structures + OOP"></a>
+</p>
 
 > **Provably Fair Student-Elective Matching System**
 > Combined Data Structures (C/C++) + Object-Oriented Programming (C++) Academic Project (PBL) with real institutional applicability for 1,500+ students.
@@ -13,7 +37,7 @@
 
 ## 📌 Problem & Solution Overview
 
-- **The Problem:** Every semester, 1,500+ students rank elective courses and lab batches against strict seat limits. Existing manual or First-Come-First-Serve (FCFS) allocations reward speed or luck, are vulnerable to human bias, and offer **no stability guarantee** (students and electives may form blocking pairs who both prefer to swap).
+- **The Problem:** Every semester, 1,500+ students rank elective courses against strict seat limits. Existing manual or First-Come-First-Serve (FCFS) allocations reward speed or luck, are vulnerable to human bias, and offer **no stability guarantee** (students and electives may form blocking pairs who both prefer to swap).
 - **The Solution:** **AllotMate** adapts the **Gale–Shapley stable matching algorithm** (student-proposing variant) with seat capacities, custom data structures (Sparse Matrix, Priority Queue, AVL Trees, Threaded BST, Hash Tables), an RAII-compliant PostgreSQL persistence layer via `libpqxx`, and an optional decoupled ML forecasting microservice.
 
 ---
@@ -120,14 +144,7 @@ Copy the template configuration file:
 ```bash
 cp .env.example .env
 ```
-Ensure `.env` contains:
-```ini
-DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=allotmate
-DB_USER=postgres
-DB_PASSWORD=postgres
-```
+The template already holds the defaults for the local Docker database (port `5433`, so it does not clash with a locally installed PostgreSQL on `5432`). Change them only if your database differs. `.env` is git-ignored — never commit it.
 
 ### 3. Start PostgreSQL Database
 ```bash
@@ -154,7 +171,7 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
   ```bash
   docker exec -it allotmate_postgres psql -U postgres -d allotmate
   ```
-- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, Username/Password `postgres`.
+- **pgAdmin GUI:** Register Server with Host `localhost`, Port `5433`, Database `allotmate`, and the user/password from your `.env`.
 
 ---
 
