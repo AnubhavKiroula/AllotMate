@@ -20,6 +20,10 @@ const std::string CURRENT_ROUND = "Round 1";
 // recorded under the first seeded coordinator (ID 1).
 const int DEMO_COORDINATOR_ID = 1;
 
+// Sample student file shipped with the project. The path is relative,
+// so run AllotMate from the project folder (it needs .env from there too).
+const std::string SAMPLE_CSV_PATH = "data/students_sample.csv";
+
 // -----------------------------------------------------------
 // Constructor: Establish DB connection using .env credentials.
 // PostgresConnection is RAII -- connection is held for CLI
@@ -68,7 +72,7 @@ int CLI::selectRole() {
 
 // -----------------------------------------------------------
 // runCoordinatorMenu() -- Main loop for coordinator role.
-// Loops until user selects Exit (option 8).
+// Loops until user selects Exit (option 9).
 // Option 0 opens the OOP evaluation demo screen.
 // -----------------------------------------------------------
 void CLI::runCoordinatorMenu() {
@@ -81,8 +85,9 @@ void CLI::runCoordinatorMenu() {
         std::cout << "  [5] Run Allocation (Gale-Shapley)\n";
         std::cout << "  [6] View Allotment Results\n";
         std::cout << "  [7] View Waitlist\n";
+        std::cout << "  [8] Import Students from CSV\n";
         std::cout << "  [0] OOP & DS Concepts Demo (Evaluator Mode)\n";
-        std::cout << "  [8] Exit\n";
+        std::cout << "  [9] Exit\n";
         printSeparator();
 
         int choice = getIntInput("  Enter option: ");
@@ -94,10 +99,11 @@ void CLI::runCoordinatorMenu() {
             case 5: runAllocation();           break;
             case 6: viewAllotmentResults();    break;
             case 7: viewWaitlist();            break;
+            case 8: importStudentsFromCsv();   break;
             case 0: runOOPDemoScreen();        break;
-            case 8: running = false;           break;
+            case 9: running = false;           break;
             default:
-                std::cout << "\n  [!] Invalid option. Please choose 0-8.\n";
+                std::cout << "\n  [!] Invalid option. Please choose 0-9.\n";
         }
     }
 }
@@ -562,6 +568,89 @@ void CLI::printStudentLine(const std::string& rollNo, const std::string& name,
               << std::left  << std::setw(24) << name
               << std::right << std::setw(6)  << cgpa
               << "  " << branch << "\n";
+}
+
+// -----------------------------------------------------------
+// importStudentsFromCsv() -- OPTION 8
+// Reads a student CSV, shows which rows are valid and which
+// were rejected (and why), and inserts the valid rows only
+// after the coordinator confirms.
+// CsvImporter does the parsing/validation and PostgresStudentRepo
+// does the INSERT -- the CLI only asks and prints.
+// -----------------------------------------------------------
+void CLI::importStudentsFromCsv() {
+    printHeader("Import Students from CSV");
+    std::cout << "  Expected columns: roll_no, name, cgpa, branch\n";
+    std::cout << "  Sample file     : " << SAMPLE_CSV_PATH << "\n";
+    printSeparator();
+
+    // std::cin >> reads one word, so the path must not contain spaces.
+    std::cout << "\n  Enter CSV file path (0 = use the sample file): ";
+    std::string path;
+    std::cin >> path;
+    if (path == "0") {
+        path = SAMPLE_CSV_PATH;
+    }
+
+    try {
+        // Step 1: parse and validate. Nothing touches the database yet.
+        ImportResult result = CsvImporter::parseFile(path);
+
+        std::cout << "\n  Rows read          : " << result.totalRows << "\n";
+        std::cout << "  Valid rows         : " << result.accepted.size() << "\n";
+        std::cout << "  Duplicate roll nos : " << result.duplicateCount << " (dropped)\n";
+        std::cout << "  Invalid rows       : " << result.errors.size() << "\n";
+
+        // Show why rows were rejected, so the coordinator can fix the file.
+        // Only the first few are printed to keep the screen readable.
+        const size_t MAX_ERRORS_SHOWN = 10;
+        for (size_t i = 0; i < result.errors.size() && i < MAX_ERRORS_SHOWN; i++) {
+            const RowError& error = result.errors[i];
+            std::cout << "    Line " << error.lineNumber << ": " << error.reason << "\n";
+        }
+        if (result.errors.size() > MAX_ERRORS_SHOWN) {
+            std::cout << "    ... and " << (result.errors.size() - MAX_ERRORS_SHOWN) << " more.\n";
+        }
+
+        if (result.accepted.empty()) {
+            std::cout << "\n  Nothing to import -- the file has no valid rows.\n";
+            waitForEnter();
+            return;
+        }
+
+        // Step 2: ask before writing anything.
+        int answer = getIntInput("\n  Insert " + std::to_string(result.accepted.size()) +
+                                 " student(s) into the database? (1 = Yes, 0 = No): ");
+        if (answer != 1) {
+            std::cout << "\n  Cancelled. Nothing was added to the database.\n";
+            waitForEnter();
+            return;
+        }
+
+        // Step 3: insert. Roll numbers that are already in the database are
+        // skipped by bulkInsert (ON CONFLICT DO NOTHING), so 'added' can be
+        // smaller than the number of valid rows.
+        PostgresStudentRepo repo(db);
+        int added = repo.bulkInsert(result.accepted);
+        int skipped = static_cast<int>(result.accepted.size()) - added;
+
+        std::cout << "\n  [OK] " << added << " student(s) added.\n";
+        if (skipped > 0) {
+            std::cout << "  " << skipped << " student(s) skipped -- roll number already in the database.\n";
+        }
+        if (added > 0) {
+            std::cout << "  New students have no preferences yet, so allocation will\n";
+            std::cout << "  list them as not allotted until they submit their choices.\n";
+        }
+
+    } catch (const std::runtime_error& e) {
+        // CsvImporter throws this when the file cannot be opened.
+        std::cerr << "\n  [ERROR] " << e.what() << "\n";
+    } catch (const AllocationException& e) {
+        // Database errors (DatabaseException is a child of AllocationException).
+        std::cerr << "\n  [DB ERROR] " << e.what() << "\n";
+    }
+    waitForEnter();
 }
 
 // -----------------------------------------------------------

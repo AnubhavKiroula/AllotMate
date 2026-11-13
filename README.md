@@ -32,6 +32,7 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 - [`08_PHASE-2-EVALUATION-GUIDE.md`](docs/08_PHASE-2-EVALUATION-GUIDE.md) — Phase 2 Evaluation Guide (Backend & Database) & Viva Q&A
 - [`09_PHASE-3-EVALUATION-GUIDE.md`](docs/09_PHASE-3-EVALUATION-GUIDE.md) — Phase 3 Evaluation Guide (Integration, Scale & Safety) & Viva Q&A
 - [`PERFORMANCE.md`](docs/PERFORMANCE.md) — Measured 1,500-scale benchmarks & `EXPLAIN ANALYZE` index profiling
+- [`LOAD-TEST.md`](docs/LOAD-TEST.md) — End-to-end 1,500 × 30 load test through the CLI (correctness + timings)
 - [`DB-SETUP.md`](docs/DB-SETUP.md) — Database Quickstart & pgAdmin Setup Guide
 
 ---
@@ -254,15 +255,20 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 - [x] **CLI Menu Specifications:** Defined numbered menu flows for coordinator and student roles (`docs/04_UIUX.md`).
 - [x] **Git Workflow Adherence:** Established PR Markdown templates and branch conventions.
 
-#### 🔹 Phase 2: CLI Implementation & Test Harness (30 Marks) — `IN PROGRESS`
-- [ ] **CLI Admin Tool:** Implement interactive terminal interface covering main menu states (Import, Set Capacities, Run Allocation, View Results, View Waitlist).
-- [ ] **Automated CTest Suite:** Scaffold CTest unit testing framework integrated with CMake.
-- [ ] **Isolated ML Microservice Scaffold:** Set up Python FastAPI microservice under `/ml-service` with its own Dockerfile and `requirements.txt`.
-- [ ] **Demand Forecasting Model:** Implement regression/random-forest demand forecasting endpoint (`POST /forecast/demand`).
+#### 🔹 Phase 2: CLI Implementation & Test Harness (30 Marks) — `CLI COMPLETED · ML DEFERRED`
+- [x] **CLI Admin Tool:** All coordinator menu states are implemented in `src/CLI.cpp` (PR #29 and `feature/m4-import-csv-load-test`):
+  - **[5] Run Allocation:** calls `AllocationService::runAllocation`. If the round is already allocated, it asks the coordinator to confirm before replacing the results (SRS edge case 7), and handles "another run in progress".
+  - **[6] View Allotment Results:** results grouped by elective, best CGPA first, with an elective filter (`0` = all) and a "Not allotted" list (SRS edge cases 1 and 5). All SQL stays in `ReportRepository`.
+  - **[7] View Waitlist:** a waitlist in front-of-line order from `ReportRepository::waitlistFor`. It never re-orders students; the AVL tree decides the order.
+  - **[8] Import Students from CSV:** validates the file with `CsvImporter`, shows each rejected row with its line number and reason, and inserts with `PostgresStudentRepo::bulkInsert` only after confirmation. Roll numbers already in the database are skipped and reported.
+  - **[2] Set Capacities** existed from Phase 1.
+- [x] **Automated CTest Suite:** Built by Member 3 (`tests/`, 4 suites). Member 4 runs it after every CLI change.
+- [ ] **Isolated ML Microservice Scaffold:** `DEFERRED`. Postponed until the team agrees on a scope (see Next Work).
+- [ ] **Demand Forecasting Model:** `DEFERRED`. The database holds one semester only, so there is no history to train on yet.
 
-#### 🔹 Phase 3: End-to-End System Testing & Demo Polish (50 Marks) — `UPCOMING`
-- [ ] **Collusion Detection Endpoint:** Implement clustering algorithm (`POST /forecast/collusion-check`) flagging suspicious identical preference patterns.
-- [ ] **System-Wide Load Testing:** Run end-to-end load tests on 1,500 students × 30 electives; log runtime statistics.
+#### 🔹 Phase 3: End-to-End System Testing & Demo Polish (50 Marks) — `IN PROGRESS`
+- [ ] **Collusion Detection Endpoint:** `DEFERRED` together with the ML microservice.
+- [x] **System-Wide Load Testing:** 1,500 students × 30 electives, run through the CLI. Every run gives the same result: 1,426 matched, 74 unmatched, 0 electives over capacity. `test_allocation` passes all 18 checks at this scale. A full allocation takes under 1 s on a Windows laptop. Details and timings are in [`docs/LOAD-TEST.md`](docs/LOAD-TEST.md).
 - [ ] **Full Team Demo Rehearsal:** Coordinate live presentation flow, backup output recording, and panel Q&A preparation.
 
 ---
@@ -291,9 +297,14 @@ In priority order:
 - Model unit tests and rule-of-five for the trees, as planned.
 
 ### Member 4 — Gaurang Nauriyal (Integration / ML)
-- CLI **"Run Allocation"**: replace `runAllocationStub()` with `AllocationService::runAllocation(coordinatorId, "Round 1", allowRerun)`. On `AlreadyAllottedException`, ask the coordinator to confirm, then call again with `allowRerun = true`.
-- CLI **"View allotment results" / "View waitlist"** screens: format the rows from `ReportRepository` (`allotmentResults`, `unmatchedStudents`, `waitlistFor`).
-- 1,500 × 30 system load test (`scripts/scale_seed_1500.sql` is ready), and the ML microservice.
+> ✅ **Done:** CLI screens Run Allocation, View Results, View Waitlist and Import CSV, plus the 1,500 × 30 load test ([`docs/LOAD-TEST.md`](docs/LOAD-TEST.md)).
+
+Remaining:
+1. **Fairness report in the CLI:** once Member 1's `detectBlockingPairs()` returns a count, show it in the Run Allocation summary. It currently prints "pending".
+2. **Re-test View Waitlist** once Member 2's AVL waitlist is connected to `WaitlistRepository`. Until then the waitlist table is empty.
+3. **ML scope decision** (with the team or mentor): the collusion check works on current preference data, while demand forecasting would need past-semester data.
+4. **Found in the load test:** `test_db_layer` hard-codes roll numbers from the 100-student seed, so 2 checks fail on the 1,500-student dataset. The code under test is fine; discuss the test fix with Member 3.
+5. **Team demo rehearsal** and viva prep.
 
 ### Member 3 — Anubhav Kiroula (Backend / DB) — remaining
 - With team agreement, drop the two redundant indexes found by profiling (see `docs/PERFORMANCE.md`).
@@ -320,6 +331,7 @@ AllotMate/
 │   ├── 08_PHASE-2-EVALUATION-GUIDE.md
 │   ├── 09_PHASE-3-EVALUATION-GUIDE.md
 │   ├── DB-SETUP.md              # Database & pgAdmin setup guide
+│   ├── LOAD-TEST.md             # 1,500 x 30 load test through the CLI
 │   └── PERFORMANCE.md           # Measured 1,500-scale benchmarks & EXPLAIN plans
 ├── include/                     # C++ header files & interfaces
 │   ├── AllocationException.h    # Custom domain & database exception hierarchy
