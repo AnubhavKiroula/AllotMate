@@ -13,7 +13,8 @@ private:
     int currentSize;
 
     void resize() {
-        int newCapacity = capacity * 2;
+        // A moved-from stack has capacity 0, and 0 * 2 is still 0.
+        int newCapacity = (capacity == 0) ? 10 : capacity * 2;
 
         T* newElements = static_cast<T*>(
             ::operator new(sizeof(T) * newCapacity)
