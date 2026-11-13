@@ -1,4 +1,4 @@
-#include "FairnessReport.h"
+#include "MeritRankingReport.h"
 
 int main() {
     std::vector<Student> students = {
@@ -7,6 +7,6 @@ int main() {
         Student(103, "Meera", 9.0f),
         Student(102, "Ravi", 8.5f)
     };
-    FairnessReport::print(students);
+    MeritRankingReport::print(students);
     return 0;
 }

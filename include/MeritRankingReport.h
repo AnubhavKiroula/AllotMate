@@ -7,7 +7,7 @@
 // Prints students in merit order using the stack-less threaded traversal.
 // Inorder gives ascending order (lowest merit first), so we collect and
 // print in reverse to show rank 1 (highest CGPA, lower id on ties) first.
-class FairnessReport {
+class MeritRankingReport {
 public:
     static void print(const std::vector<Student>& students) {
         ThreadedBST<Student> tree;
