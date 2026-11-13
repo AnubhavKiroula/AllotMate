@@ -1,27 +1,36 @@
+// ============================================================
+// benchmark_matching.cpp -- FCFS vs Gale-Shapley on the same data
+//
+// Loads students and electives from the database, allocates them
+// twice (first-come-first-served and Gale-Shapley) and prints one
+// comparison table. Both results are judged by the same
+// MatchingEngine::buildFairnessReport(), so the blocking-pair
+// counts are directly comparable (PRD section 7).
+//
+// Load a dataset first, e.g. scripts/benchmark_seed.sql.
+// Not a test: timings depend on the machine.
+// ============================================================
 
-#include <iostream>
-#include <vector>
-#include <algorithm>
 #include <chrono>
 #include <iomanip>
-#include <stdexcept>
+#include <iostream>
+#include <string>
+#include <vector>
 
-#include "Student.h"
 #include "Elective.h"
+#include "HashTable.h"
 #include "MatchingEngine.h"
 #include "PostgresConnection.h"
-#include "PostgresStudentRepo.h"
 #include "PostgresElectiveRepo.h"
+#include "PostgresStudentRepo.h"
+#include "Student.h"
 
 using Clock = std::chrono::steady_clock;
 
 struct BenchmarkResult {
-    std::vector<int> assignedElectiveIds;
-    int matched = 0;
-    int unmatched = 0;
-    int firstChoice = 0;
-    double averageRank = 0.0;
+    std::vector<int> assignedElectiveIds; // same order as students, -1 = unmatched
     double executionTimeMs = 0.0;
+    FairnessReport fairness;
 };
 
 // FCFS: process students in ascending student ID order.
@@ -33,24 +42,21 @@ BenchmarkResult runFCFS(
     BenchmarkResult result;
     result.assignedElectiveIds.resize(students.size(), -1);
 
-    for (Elective& elective : electives) {
-        elective.resetSeats();
+    // Elective id -> position in the electives vector.
+    HashTable<int, int> positionOf;
+    for (std::size_t i = 0; i < electives.size(); ++i) {
+        electives[i].resetSeats();
+        positionOf.insert(electives[i].getId(), static_cast<int>(i));
     }
 
     const auto start = Clock::now();
 
     for (std::size_t i = 0; i < students.size(); ++i) {
         for (int preferredId : students[i].getPreferenceList()) {
-            auto elective = std::find_if(
-                electives.begin(),
-                electives.end(),
-                [preferredId](const Elective& e) {
-                    return e.getId() == preferredId;
-                }
-            );
+            Elective& elective = electives[positionOf.find(preferredId)];
 
-            if (elective != electives.end() && elective->hasSeat()) {
-                elective->allocateSeat();
+            if (elective.hasSeat()) {
+                elective.allocateSeat();
                 result.assignedElectiveIds[i] = preferredId;
                 break;
             }
@@ -63,62 +69,36 @@ BenchmarkResult runFCFS(
     return result;
 }
 
-// Calculate common allocation metrics for either algorithm.
-void calculateMetrics(
-    BenchmarkResult& result,
-    const std::vector<Student>& students
+// Gale-Shapley through the real engine. Only runGaleShapley() is timed,
+// like the FCFS loop above (building the indexes is not timed in either).
+BenchmarkResult runGaleShapley(
+    const std::vector<Student>& students,
+    const std::vector<Elective>& electives
 ) {
-    int totalAssignedRank = 0;
+    MatchingEngine engine;
+    engine.loadData(students, electives);
 
-    for (std::size_t i = 0; i < students.size(); ++i) {
-        const int assignedId = result.assignedElectiveIds[i];
+    const auto start = Clock::now();
+    engine.runGaleShapley();
+    const auto end = Clock::now();
 
-        if (assignedId == -1) {
-            ++result.unmatched;
-            continue;
-        }
-
-        ++result.matched;
-
-        const std::vector<int>& preferences = students[i].getPreferenceList();
-
-        for (std::size_t rank = 0; rank < preferences.size(); ++rank) {
-            if (preferences[rank] == assignedId) {
-                totalAssignedRank += static_cast<int>(rank) + 1;
-
-                if (rank == 0) {
-                    ++result.firstChoice;
-                }
-                break;
-            }
-        }
-    }
-
-    result.averageRank = result.matched > 0 ? static_cast<double>(totalAssignedRank) / result.matched : 0.0;
+    BenchmarkResult result;
+    result.assignedElectiveIds = engine.getAssignedElectiveIds();
+    result.executionTimeMs = std::chrono::duration<double, std::milli>(end - start).count();
+    return result;
 }
 
-// Print comparable results.
-void printResults(
-    const std::string& algorithm,
-    const BenchmarkResult& result,
-    int totalStudents
-) {
-    std::cout << "\n" << algorithm << "\n";
-    std::cout << "------------------------------\n";
+// One row of the comparison table (counts and decimals are printed differently).
+void printRow(const std::string& label, int fcfs, int galeShapley) {
+    std::cout << "  " << std::left << std::setw(28) << label
+              << std::right << std::setw(10) << fcfs
+              << std::setw(15) << galeShapley << "\n";
+}
 
-    std::cout << "Execution time: "<< result.executionTimeMs << " ms\n";
-
-    std::cout << "Matched students: "<< result.matched << "\n";
-
-    std::cout << "Unmatched students: "<< result.unmatched << "\n";
-
-    std::cout << "First-choice allocations: "<< result.firstChoice << "\n";
-
-    const double firstChoicePercentage = totalStudents > 0 ? (static_cast<double>(result.firstChoice) / totalStudents) * 100.0 : 0.0;
-
-    std::cout << "First-choice percentage: " << firstChoicePercentage << "%\n";
-
-    std::cout << "Average preference rank: " << result.averageRank << "\n";
+void printRow(const std::string& label, double fcfs, double galeShapley) {
+    std::cout << "  " << std::left << std::setw(28) << label
+              << std::right << std::setw(10) << fcfs
+              << std::setw(15) << galeShapley << "\n";
 }
 
 int main() {
@@ -144,35 +124,35 @@ int main() {
         std::cout << "Students: " << students.size() << "\n";
         std::cout << "Electives: " << electives.size() << "\n";
 
-        // Run FCFS.
-        BenchmarkResult fcfsResult = runFCFS(students, electives);
-        calculateMetrics(fcfsResult, students);
+        BenchmarkResult fcfs = runFCFS(students, electives);
+        BenchmarkResult galeShapley = runGaleShapley(students, electives);
 
-        // Run Gale-Shapley using the same input data.
-        MatchingEngine engine;
-        engine.loadData(students, electives);
+        // Judge both assignments with exactly the same rules.
+        fcfs.fairness = MatchingEngine::buildFairnessReport(
+            students, electives, fcfs.assignedElectiveIds);
+        galeShapley.fairness = MatchingEngine::buildFairnessReport(
+            students, electives, galeShapley.assignedElectiveIds);
 
-        const auto gsStart = Clock::now();
-        engine.runGaleShapley();
-        const auto gsEnd = Clock::now();
+        const FairnessReport& f = fcfs.fairness;
+        const FairnessReport& g = galeShapley.fairness;
 
-        BenchmarkResult gsResult;
-        gsResult.assignedElectiveIds.resize(students.size(), -1);
-
-        gsResult.executionTimeMs = std::chrono::duration<double, std::milli>(gsEnd - gsStart).count();
-
-        for (std::size_t i = 0; i < students.size(); ++i) {
-            gsResult.assignedElectiveIds[i] = engine.getAssignedElectiveId(students[i].getId());
-        }
-
-        calculateMetrics(gsResult, students);
-
-        // Display both results.
         std::cout << std::fixed << std::setprecision(2);
+        std::cout << "\n  " << std::left << std::setw(28) << "Metric"
+                  << std::right << std::setw(10) << "FCFS"
+                  << std::setw(15) << "Gale-Shapley" << "\n";
+        std::cout << "  " << std::string(53, '-') << "\n";
+        printRow("Execution time (ms)", fcfs.executionTimeMs, galeShapley.executionTimeMs);
+        printRow("Matched students", f.matched, g.matched);
+        printRow("Unmatched students", f.unmatched, g.unmatched);
+        printRow("First-choice allocations", f.firstChoice, g.firstChoice);
+        printRow("First-choice percentage", f.firstChoicePercent, g.firstChoicePercent);
+        printRow("Average preference rank", f.averageRank, g.averageRank);
+        printRow("Blocking pairs", f.blockingPairs, g.blockingPairs);
 
-        printResults("FCFS", fcfsResult, static_cast<int>(students.size()));
-
-        printResults("Gale-Shapley", gsResult, static_cast<int>(students.size()));
+        std::cout << "\nBlocking pairs: FCFS = " << f.blockingPairs
+                  << ", Gale-Shapley = " << g.blockingPairs << "\n";
+        std::cout << "A blocking pair is a student and an elective that would both rather\n";
+        std::cout << "be matched to each other: a justified complaint against the result.\n";
 
         std::cout << "\n====================================\n";
         std::cout << " Benchmark Comparison Complete\n";
