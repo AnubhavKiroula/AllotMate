@@ -54,3 +54,22 @@ bool Elective::operator==(const Elective& other) const {
 void Elective::resetSeats(){
     seatsFilled = 0;
 }
+void Elective::addToWaitlist(const Student& s) {
+    waitlist.insert(s);
+}
+
+void Elective::releaseSeat() {
+    if (seatsFilled > 0) --seatsFilled;
+}
+
+// Gives a free seat to the highest-priority waitlisted student.
+bool Elective::promoteNext(Student& promoted) {
+    if (!hasSeat()) return false;
+    if (!waitlist.extractMax(promoted)) return false;
+    allocateSeat();
+    return true;
+}
+
+int Elective::waitlistSize() const {
+    return waitlist.size();
+}
