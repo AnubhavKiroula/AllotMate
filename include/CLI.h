@@ -8,6 +8,8 @@
 #include "AllocationService.h"
 #include "AllocationException.h"
 #include "ReportRepository.h"
+#include "CsvImporter.h"
+#include "PostgresStudentRepo.h"
 
 // ============================================================
 // CLI -- Interactive Terminal Interface for AllotMate
@@ -47,6 +49,9 @@ private:
     void printStudentTableHeader() const;
     void printStudentLine(const std::string& rollNo, const std::string& name,
                           double cgpa, const std::string& branch) const;
+
+    // --- Data Import ---
+    void importStudentsFromCsv();   // Option 8: Validate a student CSV, then insert after confirmation
 
     // --- Student Menu ---
     void runStudentMenu();
