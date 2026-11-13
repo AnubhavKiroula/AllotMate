@@ -105,15 +105,14 @@ AllocationSummary AllocationService::runAllocation(int coordinatorId, const std:
     MatchingEngine engine;
     engine.loadData(students, electives);
     engine.runGaleShapley();
-    const int blockingPairs = engine.detectBlockingPairs();
-
-    engine.generateFairnessReport();
 
     AllocationSummary summary;
+    summary.fairness = engine.generateFairnessReport();
     summary.totalStudents = static_cast<int>(students.size());
     summary.matched = saveResults(engine, round);
     summary.unmatched = summary.totalStudents - summary.matched;
 
+    const int blockingPairs = summary.fairness.blockingPairs;
     std::ostringstream outcome;
     outcome << round << ": " << summary.matched << " of " << summary.totalStudents
             << " students matched, " << summary.unmatched << " unmatched. "

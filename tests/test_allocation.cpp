@@ -164,9 +164,13 @@ static void testRunProducesValidStableResult(PostgresConnection& conn) {
     check(countBlockingPairs(conn, ROUND) == 0,
           "no blocking pairs in the saved result (stable matching)");
 
+    // The engine's fairness report must agree with this independent check.
+    check(summary.fairness.blockingPairs == 0 && summary.fairness.matched == summary.matched,
+          "fairness report agrees with the saved result (0 blocking pairs)");
+
     pqxx::result logRow = conn.executeQuery(
-    "SELECT blocking_pairs_found, outcome_summary FROM RUN_LOG "
-    "WHERE run_id = " + std::to_string(summary.runId) + ";");
+        "SELECT blocking_pairs_found, outcome_summary FROM RUN_LOG "
+        "WHERE run_id = " + std::to_string(summary.runId) + ";");
 
     check(logRow.size() == 1, "run is recorded in RUN_LOG");
 

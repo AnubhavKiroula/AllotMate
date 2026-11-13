@@ -1,6 +1,7 @@
 #include "MatchingEngine.h"
 
 #include <iostream>
+#include <utility>
 #include <vector>
 
 int main() {
@@ -302,6 +303,69 @@ int main() {
 
     std::cout << "1,500-student scale test: passed (" << largeAllotted
               << " allotted, " << (1500 - largeAllotted) << " unmatched)\n";
+
+    // Test stability: a Gale-Shapley result never has a blocking pair.
+    if (engine.detectBlockingPairs() != 0 || largeEngine.detectBlockingPairs() != 0) {
+        std::cerr << "FAIL: Gale-Shapley result has blocking pairs\n";
+        return 1;
+    }
+
+    std::cout << "No-blocking-pairs test: passed\n";
+
+    // Test the fairness report of the first engine: Aman (9.5) gets AI
+    // (rank 1), Riya (8.5) gets Data Science (rank 2), Neha (9.0) listed
+    // only AI and stays unmatched.
+    FairnessReport report = engine.generateFairnessReport();
+    if (report.totalStudents != 3 || report.matched != 2 || report.unmatched != 1 ||
+        report.firstChoice != 1 || report.averageRank != 1.5 || report.blockingPairs != 0) {
+        std::cerr << "FAIL: Fairness report numbers are wrong\n";
+        return 1;
+    }
+
+    std::cout << "Fairness report test: passed\n";
+
+    // Test countBlockingPairs on an unfair assignment, like FCFS can produce:
+    // Riya (8.5) took AI first, so Aman (9.5) ended up in Data Science.
+    //   (Aman, AI) blocks: Aman prefers AI, and AI prefers Aman to Riya.
+    //   (Neha, AI) blocks: Neha is unmatched, and AI prefers Neha to Riya.
+    std::vector<Student> trio = {s1, s2, s3};      // Aman, Riya, Neha
+    std::vector<Elective> twoElectives = {e1, e2}; // AI (10), Data Science (20)
+    std::vector<int> unfairAssignment = {20, 10, -1};
+
+    if (MatchingEngine::countBlockingPairs(trio, twoElectives, unfairAssignment) != 2) {
+        std::cerr << "FAIL: Expected 2 blocking pairs in the unfair assignment\n";
+        return 1;
+    }
+
+    // A free seat blocks for an unmatched student who listed it, but a
+    // zero-capacity elective never forms a blocking pair (SRS #3).
+    Student s10(401, "Zoya", 8.0f);
+    s10.addPreference(80);
+    s10.addPreference(90);
+
+    std::vector<Student> zoya = {s10};
+    std::vector<Elective> zeroAndOpen = {Elective(80, "Zero Seats", 0), Elective(90, "Open Seats", 2)};
+
+    if (MatchingEngine::countBlockingPairs(zoya, zeroAndOpen, std::vector<int>{-1}) != 1 ||
+        MatchingEngine::countBlockingPairs(zoya, zeroAndOpen, std::vector<int>{90}) != 0) {
+        std::cerr << "FAIL: Free-seat / zero-capacity blocking pair rules\n";
+        return 1;
+    }
+
+    std::cout << "Blocking-pair counting test: passed\n";
+
+    // Test Stack: a moved-from stack has capacity 0 and must still grow.
+    Stack<int> original;
+    original.push(1);
+    Stack<int> movedTo(std::move(original));
+    original.push(2);
+
+    if (original.size() != 1 || original.top() != 2 || movedTo.top() != 1) {
+        std::cerr << "FAIL: Stack push after move\n";
+        return 1;
+    }
+
+    std::cout << "Stack push-after-move test: passed\n";
 
     return 0;
 }
