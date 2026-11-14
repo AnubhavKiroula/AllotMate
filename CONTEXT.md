@@ -52,7 +52,7 @@ list/graph from our own nodes; our own `HashTable` instead of `unordered_*`.
 ## Important decisions
 - Repositories borrow a `PostgresConnection&`; SQL strings escaped with `quoteLiteral`.
 - Allocation results are written in ONE transaction; a re-run of an allocated
-  round needs explicit `allowRerun` (SRS #7); concurrent runs refused (SRS #10).
+  round needs explicit `allowRerun` (SRS #7); concurrent runs refused (SRS #9).
 - A run whose stability was not checked stores `NULL` blocking pairs, never a
   fake `0`. Since PR #31 every run stores the real count.
 - Waitlist rule: a student waits for every elective ranked above the one they

@@ -34,7 +34,7 @@ public:
 
 // Runs a complete allocation: database -> MatchingEngine -> database.
 //
-//   1. lock      : refuse to start if another run is in progress (SRS #10)
+//   1. lock      : refuse to start if another run is in progress (SRS #9)
 //   2. re-run    : refuse to overwrite an existing round unless the coordinator
 //                  explicitly allows it (SRS #7 -- never silently overwrite)
 //   3. load      : students + electives through the repositories
