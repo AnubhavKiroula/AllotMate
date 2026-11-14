@@ -109,11 +109,27 @@ never quietly dropped (SRS edge cases #1 and #5).
   was. Database errors come back as `DatabaseException`.
 - **`loadWaitlist(electiveId)`** returns the ids front of the line first
   (`ORDER BY position`).
+- **`replaceWaitlist(txn, electiveId, ids)`** (static overload) does the same
+  delete + insert inside a transaction the *caller* owns. `AllocationService`
+  uses it so a run saves allotments, statuses, seat counts **and every waitlist**
+  in one transaction: either all of it is saved or none of it.
+
+**Where the waitlists come from (final phase, FR-7):** after Gale–Shapley,
+`MatchingEngine::buildWaitlists()` puts each student on the AVL waitlist of every
+elective they ranked *above* the one they got (all their choices if unmatched).
+`Elective::waitlistOrder()` reads the tree front-first, and the run saves it.
+Unmatched students who are waiting get the status `WAITLISTED`, and the student
+screen shows each position (FR-2).
 
 > **Concept:** separation of responsibilities. The *order* of a waitlist is
 > decided by Member 2's AVL tree (its in-order traversal). This class only
 > stores and loads that order. I didn't write a second ranking here, so the
 > AVL tree stays the single place where waitlist ordering lives.
+>
+> **Why the waitlists are consistent:** the matching is stable, so an elective a
+> student would prefer is full of students who all outrank them. Everyone
+> inside an elective therefore outranks everyone on its waitlist, and
+> `test_allocation` checks exactly that.
 
 ### 3.3 `include/ReportRepository.h` + `src/ReportRepository.cpp`
 
@@ -155,8 +171,13 @@ the rows already sorted, so the database doesn't sort 7,500 rows either.
 
 ### 3.6 `src/RunLogRepository.cpp` + schema: "not checked" is not 0
 
-`detectBlockingPairs()` (Member 1) doesn't return a count yet. Writing `0` would
-claim every run was proven stable, which would be a false audit record. So:
+> **Update (PR #31):** `detectBlockingPairs()` now returns the count, and every
+> run stores it (0 for every Gale–Shapley run). The `NULL` rule below still
+> matters: a run whose stability was never checked must not claim `0`.
+
+When this was written, `detectBlockingPairs()` (Member 1) didn't return a count
+yet. Writing `0` would claim every run was proven stable, which would be a
+false audit record. So:
 - `RUN_LOG.blocking_pairs_found` is now **nullable** (`sql/01_init_schema.sql`).
   `NULL` means "the check was not run".
 - `logRun` stores a negative count as `NULL`; `recentRuns` reads `NULL` back as
@@ -219,17 +240,20 @@ ctest --test-dir build --output-on-failure
 ```
 1. **Tests:** point at `allocation` passing. The run is checked for capacity,
    stability, re-run refusal and locking, all read back from PostgreSQL.
-2. **pgAdmin:** open `RUN_LOG`. Each run is an immutable row, and
-   `blocking_pairs_found` is `NULL` because the stability check isn't run yet.
-   Be ready to explain why that is more honest than `0`.
-3. **Locking:** `testConcurrentRunIsRefused` in the `allocation` test output shows
-   it automatically: a second session holds the lock, the run is refused and
-   writes nothing, then succeeds once the lock is released. Once Member 4 wires
-   "Run Allocation" into the CLI, it can be shown live: hold the lock in `psql`
-   with `SELECT pg_advisory_lock(7310);`, press Run, and it's refused.
-4. **Scale:** load `scripts/scale_seed_1500.sql`, run `./build/benchmark_db`, then
-   `scripts/explain_core_queries.sql`, and show the Index Scan lines. Restore with
-   `sql/02_seed_data.sql`.
+2. **CLI `[5] Run Allocation`:** the summary ends with the fairness report:
+   first choice %, average rank, and **Blocking pairs: 0 (stable matching)**.
+   Then open `RUN_LOG` in pgAdmin: the same count is stored with the run.
+3. **CLI `[7] View Waitlist`** for a full elective: the queue is in CGPA order.
+   Log in as a student (`[2]`) with a waitlisted roll number: the screen lists
+   each waitlist position, best choice first.
+4. **Locking live:** hold the lock in `psql` with `SELECT pg_advisory_lock(7310);`,
+   press `[5]`, and the run is refused without writing anything.
+   `testConcurrentRunIsRefused` proves the same automatically.
+5. **FCFS vs Gale–Shapley:** load
+   `scripts/benchmark_seed.sql` with `-v student_count=1500`, run
+   `./build/benchmark_matching`, and point at **FCFS 1,336 blocking pairs vs 0**.
+6. **Scale:** run `./build/benchmark_db`, then `scripts/explain_core_queries.sql`,
+   and show the Index Scan lines. Restore with `sql/02_seed_data.sql`.
 
 ---
 
@@ -253,9 +277,12 @@ ctest --test-dir build --output-on-failure
   that CMake still referenced. All three are fixed and explained on the PR.
 - **Two redundant indexes** found by profiling (`docs/PERFORMANCE.md`). Dropping
   them is recommended but not applied, pending team agreement.
-- **Not mine, still pending:** the CLI screens that call `AllocationService` and
-  `ReportRepository` (Member 4), the AVL waitlist ordering (Member 2), and
-  `detectBlockingPairs()` returning a count (Member 1).
+- **Final phase, now done:** the CLI screens that call `AllocationService` and
+  `ReportRepository`, the AVL waitlist (saved after every run), and
+  `detectBlockingPairs()` returning a count are all merged.
+- **Security bug found and fixed:** two CLI screens pasted the typed roll
+  number into SQL, so `'OR'1'='1` showed another student's record. Both now use
+  `quoteLiteral`, like every other query.
 
 ---
 
@@ -285,11 +312,20 @@ ctest --test-dir build --output-on-failure
   independent checker. To show the checker isn't fake, a second test plants a
   blocking pair on purpose and confirms it's detected.
 
-- **Your RUN_LOG says NULL for blocking pairs. Isn't that missing data?**
-  It's the honest value. The stability check isn't wired into the engine yet,
-  and writing `0` would claim we proved something we didn't. The tests do verify
-  stability; the audit log will record the real count once
-  `detectBlockingPairs()` returns one.
+- **Why can RUN_LOG hold NULL for blocking pairs?**
+  `NULL` means "the stability check was not run", and writing `0` instead would
+  claim a proof we didn't do. Every run now stores the real count (always 0 for
+  Gale–Shapley), but the column keeps that honest meaning.
+
+- **Who goes on a waitlist, and in what order?**
+  Every student who ranked an elective above the one they got (all choices if
+  unmatched), ordered by the AVL tree: CGPA, then lower ID. It is saved in the
+  same transaction as the allotments, so the two can never disagree.
+
+- **How did you stop SQL injection?**
+  Values typed by a user go through `quoteLiteral` (libpqxx `esc()`), which
+  escapes quotes, so input like `'OR'1'='1` is searched for literally. Numbers
+  are converted with `std::to_string`, so they can't carry SQL.
 
 - **What did profiling show?**
   All four hot queries use an index at 1,500 rows. The composite

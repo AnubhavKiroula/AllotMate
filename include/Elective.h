@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "AVLTree.h"
 #include "Student.h"
 using namespace std;
@@ -31,5 +32,6 @@ class Elective{
         void addToWaitlist(const Student& s);
         bool promoteNext(Student& promoted);
         int waitlistSize() const;
+        vector<int> waitlistOrder() const; // student ids, front of the line first
         void releaseSeat();
 };

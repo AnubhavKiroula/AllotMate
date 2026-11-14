@@ -74,3 +74,29 @@ std::vector<WaitlistRow> ReportRepository::waitlistFor(int electiveId) {
     }
     return report;
 }
+
+std::vector<WaitingForRow> ReportRepository::waitlistPositionsOf(const std::string& rollNo) {
+    // roll_no is typed by the user, so it is always passed through quoteLiteral.
+    std::ostringstream sql;
+    sql << "SELECT e.name, p.rank, w.position, "
+        << "(SELECT count(*) FROM WAITLIST w2 WHERE w2.elective_id = w.elective_id) AS waiting "
+        << "FROM WAITLIST w "
+        << "JOIN STUDENT s ON s.student_id = w.student_id "
+        << "JOIN ELECTIVE e ON e.elective_id = w.elective_id "
+        << "JOIN PREFERENCE p ON p.student_id = w.student_id AND p.elective_id = w.elective_id "
+        << "WHERE s.roll_no = " << db.quoteLiteral(rollNo)
+        << " ORDER BY p.rank ASC;";
+
+    pqxx::result rows = db.executeQuery(sql.str());
+    std::vector<WaitingForRow> report;
+    report.reserve(rows.size());
+    for (const auto& row : rows) {
+        WaitingForRow line;
+        line.electiveName = row["name"].as<std::string>();
+        line.choiceRank = row["rank"].as<int>();
+        line.position = row["position"].as<int>();
+        line.waitingTotal = row["waiting"].as<int>();
+        report.push_back(line);
+    }
+    return report;
+}

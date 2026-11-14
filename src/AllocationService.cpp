@@ -3,6 +3,7 @@
 #include "PostgresStudentRepo.h"
 #include "PostgresElectiveRepo.h"
 #include "RunLogRepository.h"
+#include "WaitlistRepository.h"
 
 #include <sstream>
 #include <vector>
@@ -59,6 +60,9 @@ int AllocationService::saveResults(const MatchingEngine& engine, const std::stri
     }
     insert << ";";
 
+    // Each elective's AVL waitlist, filled from the same matching result.
+    const std::vector<Elective> waitlists = engine.buildWaitlists();
+
     try {
         // Everything below commits together or not at all.
         pqxx::work txn(db.getRawConnection());
@@ -77,6 +81,14 @@ int AllocationService::saveResults(const MatchingEngine& engine, const std::stri
         txn.exec("UPDATE ELECTIVE e SET seats_filled = "
                  "(SELECT count(*) FROM ALLOTMENT a WHERE a.elective_id = e.elective_id "
                  "AND a.round = " + roundText + ");");
+
+        // Waitlists (FR-7). The order is the AVL tree's: front of the line first.
+        for (const Elective& elective : waitlists) {
+            WaitlistRepository::replaceWaitlist(txn, elective.getId(), elective.waitlistOrder());
+        }
+        // An unmatched student who waits for at least one elective.
+        txn.exec("UPDATE STUDENT SET status = 'WAITLISTED' WHERE status = 'UNASSIGNED' "
+                 "AND student_id IN (SELECT student_id FROM WAITLIST);");
 
         txn.commit();
     } catch (const std::exception& e) {

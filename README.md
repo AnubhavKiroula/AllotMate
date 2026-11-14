@@ -42,25 +42,6 @@
 
 ---
 
-## 📖 Documentation Quick Links
-
-Comprehensive project documentation is available in the [`/docs`](./docs) directory:
-- [`00_PROJECT-OVERVIEW-AND-DIAGRAMS.md`](docs/00_PROJECT-OVERVIEW-AND-DIAGRAMS.md) — UML Class Diagram, ER Diagram, SOLID Mapping & Evaluation Pitch
-- [`01_PRD.md`](docs/01_PRD.md) — Product Requirements Document
-- [`02_SRS.md`](docs/02_SRS.md) — Software Requirements Specification & Edge Cases
-- [`03_ARCHITECTURE.md`](docs/03_ARCHITECTURE.md) — System Architecture, DB & Containerization
-- [`04_UIUX.md`](docs/04_UIUX.md) — CLI Workflow & Evaluation Screens
-- [`05_DEVELOPMENT.md`](docs/05_DEVELOPMENT.md) — Development Phases, SOLID Rules & Definition of Done
-- [`06_VERSION-CONTROL.md`](docs/06_VERSION-CONTROL.md) — Conventional Commits, Branching Strategy & PR Guidelines
-- [`07_PHASE-1-EVALUATION-GUIDE.md`](docs/07_PHASE-1-EVALUATION-GUIDE.md) — Phase 1 Evaluation Guide, Member Role Manual & Viva Q&A
-- [`08_PHASE-2-EVALUATION-GUIDE.md`](docs/08_PHASE-2-EVALUATION-GUIDE.md) — Phase 2 Evaluation Guide (Backend & Database) & Viva Q&A
-- [`09_PHASE-3-EVALUATION-GUIDE.md`](docs/09_PHASE-3-EVALUATION-GUIDE.md) — Phase 3 Evaluation Guide (Integration, Scale & Safety) & Viva Q&A
-- [`PERFORMANCE.md`](docs/PERFORMANCE.md) — Measured 1,500-scale benchmarks & `EXPLAIN ANALYZE` index profiling
-- [`LOAD-TEST.md`](docs/LOAD-TEST.md) — End-to-end 1,500 × 30 load test through the CLI (correctness + timings)
-- [`DB-SETUP.md`](docs/DB-SETUP.md) — Database Quickstart & pgAdmin Setup Guide
-
----
-
 ## ⚡ Key Highlights & Core Features
 
 1. **Provable Fairness via Gale–Shapley Matching:** Guaranteed stable matching with zero blocking pairs. Includes an automated mathematical fairness checker after every run.
@@ -91,10 +72,10 @@ Comprehensive project documentation is available in the [`/docs`](./docs) direct
 
 | Module | Member / Role | Core DS Concepts (DS Syllabus) | Core OOP Concepts (OOP Syllabus) | Evaluator Track |
 |---|---|---|---|---|
-| **Matching Engine** | **Member 1** (DS / Algo Lead) | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, Custom exceptions | **DS Evaluator** |
-| **Domain Models & Trees** | **Member 2** (OOP Architect) | AVL Tree, Threaded BST, Hashing | Inheritance, Polymorphism, Operator Overloading | **OOP Evaluator** |
-| **Persistence & DB Layer** | **Member 3 (Anubhav Kiroula)** | Sorting (bulk import), Indexing structures | RAII, Repository Pattern (`Repository<T>`), Connection Pool | **Joint Evaluator** |
-| **Integration, Testing & ML** | **Member 4** (Integration / ML) | Graph/Cluster analysis (collusion check) | Unit testing, Microservice REST isolation | **Panel Review** |
+| **Persistence & DB Layer** | **Member 1 — Anubhav Kiroula** (Team Lead · Backend & DB) | Sorting (bulk import), Indexing structures | RAII, Repository Pattern (`Repository<T>`), Connection Pool | **Joint Evaluator** |
+| **Domain Models & Trees** | **Member 2 — Kritika Mundepi** (OOP Architect) | AVL Tree, Threaded BST, Hashing | Inheritance, Polymorphism, Operator Overloading | **OOP Evaluator** |
+| **Integration, CLI & ML** | **Member 3 — Gaurang Nauriyal** (Integration / ML) | Graph/Cluster analysis (collusion check) | Unit testing, Microservice REST isolation | **Panel Review** |
+| **Matching Engine** | **Member 4 — Dhruv Negi** (DS / Algorithm Lead) | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, Custom exceptions | **DS Evaluator** |
 
 ---
 
@@ -175,157 +156,36 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 
 ---
 
-## 📋 Comprehensive 3-Phase Team Task Tracker
-
-> **Evaluation Schedule:**
-> - **Phase 1 Evaluation:** 20 Marks *(September 5th)*
-> - **Phase 2 Evaluation:** 30 Marks *(Mid-Semester)*
-> - **Phase 3 Evaluation:** 50 Marks *(End-Semester Final PBL Viva)*
-
----
-
-### 👤 Member 3: Backend & Database Engineer (Anubhav Kiroula)
-**Focus:** PostgreSQL Schema, Libpqxx Integration, Repository Layer, Bulk CSV Import at Scale & CI/CD Pipeline.
-
-#### 🔹 Phase 1: Schema Design, Docker & CI/CD Pipeline (20 Marks) — `COMPLETED`
-- [x] **CI/CD Build Pipeline:** Created `.github/workflows/ci.yml` compiling with `-Wall -Wextra -Werror` on PRs and pushes to `main`/`dev`.
-- [x] **Dockerized PostgreSQL 16:** Created `docker-compose.yml` with named volume persistence (`pgdata`) and auto-init SQL execution.
-- [x] **Complete Relational Schema DDL:** Implemented `sql/01_init_schema.sql` covering all 7 ER diagram entities (`STUDENT`, `ELECTIVE`, `PREFERENCE`, `ALLOTMENT`, `WAITLIST`, `COORDINATOR`, `RUN_LOG`) with explicit PK/FK cascading rules and uniqueness constraints.
-- [x] **Indexing Architecture:** Implemented B-tree index on `STUDENT(roll_no)`, composite index on `PREFERENCE(student_id, rank)`, and index on `ALLOTMENT(elective_id)`.
-- [x] **Realistic Dummy Dataset:** Created `sql/02_seed_data.sql` seeding 100 students across 4 branches, 6 electives, 400 preferences, and coordinator logins with bcrypt hashes.
-- [x] **RAII Database Client Wrapper:** Implemented `PostgresConnection` class (`include/PostgresConnection.h`, `src/PostgresConnection.cpp`) with transaction management, RAII lifecycle, and automatic `.env` config loader.
-- [x] **Custom Exception Integration:** Added `AllocationException::DatabaseException` to encapsulate DB failure states without silent errors.
-- [x] **End-to-End CRUD Verification Demo:** Implemented student insert, query, readback, and cleanup cycle in `src/main.cpp`.
-- [x] **Team Setup Documentation:** Authored `docs/DB-SETUP.md` with step-by-step instructions for Docker, pgAdmin, and environment variables.
-
-#### 🔹 Phase 2: Repository Layer, Bulk Import & Isolation Tests (30 Marks) — `COMPLETED`
-- [x] **`PostgresStudentRepo` Implementation:** Concrete repository fulfilling `Repository<Student>` (`include/PostgresStudentRepo.h`, `src/PostgresStudentRepo.cpp`) with `save`/`findById`/`findAll` plus preference loading.
-- [x] **`PostgresElectiveRepo` Implementation:** Concrete repository fulfilling `Repository<Elective>` (`include/PostgresElectiveRepo.h`, `src/PostgresElectiveRepo.cpp`).
-- [x] **High-Performance Bulk CSV Ingestion:** `CsvImporter` validates and de-duplicates rows (sorted-scan duplicate detection); `PostgresStudentRepo::bulkInsert` loads them in chunked multi-row `INSERT`s with `ON CONFLICT` roll-number rejection.
-- [x] **`RUN_LOG` Execution Auditing:** `RunLogRepository` (`include/RunLogRepository.h`, `src/RunLogRepository.cpp`) appends audit rows (coordinator ID, blocking pairs, outcome summary) and reads recent runs.
-- [x] **Connection Pooling / Reuse:** `ConnectionPool` with an RAII `PooledConnection` lease (`include/ConnectionPool.h`, `src/ConnectionPool.cpp`) reuses connections instead of reconnecting per query.
-- [x] **Isolated Repository Unit Tests:** `tests/test_csv_importer.cpp` (no DB) and `tests/test_db_layer.cpp` (uncommitted-transaction rollback protects seed data); wired into CTest and run in CI against a live PostgreSQL service.
-- [x] **Zero-Warning Code Quality:** All database-layer code compiles under `-Wall -Wextra -Werror` (verified by the CI build gate).
-
-#### 🔹 Phase 3: Integration, 1,500-Scale Testing & Demo Readiness (50 Marks) — `MOSTLY COMPLETE`
-- [x] **MatchingEngine Wire-Up:** `AllocationService` runs DB → `MatchingEngine` → DB, saves results in one transaction and audits each run in `RUN_LOG`. Verified end-to-end on the seed (100/100 matched, no blocking pairs).
-- [x] **1,500-Student Scale Benchmarking:** `scripts/scale_seed_1500.sql` + `tools/benchmark_db.cpp`; measured in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). A full 1,500-student allocation takes ~190 ms (1,426 matched, 0 blocking pairs). Scale testing found the engine's fixed-size `HashTable` bug, which is now fixed with rehashing.
-- [x] **Waitlist Persistence Sync:** `WaitlistRepository` stores and loads waitlist order atomically, ready for the AVL tree's in-order output (Member 2).
-- [x] **Concurrency & Re-run Safety:** RAII `RunLock` (PostgreSQL advisory lock) refuses concurrent runs (SRS #10). Re-running an allocated round needs explicit permission (SRS #7). The `CHECK` constraint blocks lowering capacity below filled seats.
-- [x] **CLI Reporting Queries:** `ReportRepository`: allotment results (filterable by elective), unmatched students, waitlist view.
-- [x] **Index Performance Profiling:** `scripts/explain_core_queries.sql`. All four hot queries use an index at 1,500 scale. Found two redundant indexes (recommendation in `docs/PERFORMANCE.md`).
-- [ ] **Live Evaluation Demo Prep:** The demo script is written ([`docs/09_PHASE-3-EVALUATION-GUIDE.md`](docs/09_PHASE-3-EVALUATION-GUIDE.md)); the team rehearsal is still to do.
-
----
-
-### 👤 Member 2: OOP Architect
-**Focus:** Class Hierarchy, Polymorphism, Operator Overloading, Exception Hierarchy, `AVLTree` & `ThreadedBST`.
-
-#### 🔹 Phase 1: Domain Models & Core Interfaces (20 Marks) — `COMPLETED`
-- [x] **Abstract Base Class `Person`:** Defined pure virtual `displayProfile()`, protected ID/name, and virtual destructor (`include/Person.h`).
-- [x] **Exception Hierarchy:** Implemented full `AllocationException` base class and sub-exceptions (`SeatOverflowException`, `InvalidPreferenceException`, `AlreadyAllottedException`, `DatabaseException`) in `include/AllocationException.h`.
-- [x] **Generic Repository Interface:** Defined template `Repository<T>` with `save()`, `findById()`, and `findAll()` (`include/Repository.h`).
-- [x] **Domain Entity Classes:** Implemented `Student` (`include/Student.h`, `src/Student.cpp`), `Coordinator` (`include/Coordinator.h`, `src/Coordinator.cpp`), and `Elective` (`include/Elective.h`, `src/Elective.cpp`).
-- [x] **Operator Overloading Baseline:** Implemented `operator<` and `operator==` for `Student` (CGPA tie-break) and `Elective`.
-
-#### 🔹 Phase 2: Waitlist Data Structures & Operator Logic (30 Marks) — `IN PROGRESS`
-- [ ] **Template `AVLTree<T>` Implementation:** Build self-balancing AVL Tree for priority waitlist management with LL, RR, LR, RL rotations.
-- [ ] **Template `ThreadedBST<T>` Implementation:** Implement threaded binary search tree enabling stack-less inorder traversal for reporting.
-- [ ] **Polymorphic Profile Display:** Implement full polymorphic rendering in `Student::displayProfile()` and `Coordinator::displayProfile()`.
-- [ ] **Model Unit Tests:** Write isolated unit tests for `Student`, `Elective`, and `Coordinator` methods under edge case conditions.
-- [ ] **Copy & Move Semantics:** Implement rule of 5 (copy/move constructors and assignment operators) for custom tree structures.
-
-#### 🔹 Phase 3: Waitlist Sync, Optimization & OOP Viva Rehearsal (50 Marks) — `UPCOMING`
-- [ ] **AVL Tree Integration with Elective:** Wire `AVLTree` waitlist directly into `Elective` class for dynamic seat promotion.
-- [ ] **Threaded BST Inorder Reporting:** Generate formatted fairness reports utilizing stack-less threaded traversal.
-- [ ] **OOP Evaluator Walkthrough:** Prepare comprehensive narrative on SOLID design (Liskov Substitution in `Person`, Dependency Inversion in `Repository`, Open/Closed in allocation strategy).
-
----
-
-### 👤 Member 1: DS / Algorithm Lead
-**Focus:** Gale-Shapley Algorithm, `SparseMatrix`, `HashTable`, `Stack` (Backtracking), `PriorityQueue` & Fairness Verification.
-
-#### 🔹 Phase 1: Algorithm Skeleton & Interface Setup (20 Marks) — `COMPLETED`
-- [x] **MatchingEngine Skeleton:** Created `MatchingEngine` class header and implementation stubs (`include/MatchingEngine.h`, `src/MatchingEngine.cpp`).
-- [x] **Preference Validation Signatures:** Defined validation methods for student rank integrity and capacity bounds.
-- [x] **Data Structure Interface Alignment:** Agreed on data structure contracts without relying on standard STL shortcuts.
-
-#### 🔹 Phase 2: Core Data Structures & Gale-Shapley Loop (30 Marks) — `IN PROGRESS`
-- [ ] **Custom `SparseMatrix` Implementation:** Implement triplet-based (`row, col, rank`) sparse matrix for compressed preference storage.
-- [ ] **Custom `HashTable<K, V>` Implementation:** Build chaining/probing hash table for O(1) student and elective index lookups.
-- [ ] **Custom `Stack<Student>` Backtracking:** Implement custom dynamic stack for unmatched student proposals.
-- [ ] **Custom `PriorityQueue<Student>`:** Implement binary heap with sift-up/sift-down for elective preference ordering.
-- [ ] **Gale–Shapley Allocation Loop:** Implement student-proposing stable matching loop handling seat capacity and unallocated states.
-
-#### 🔹 Phase 3: Blocking-Pair Detection & FCFS Benchmark (50 Marks) — `UPCOMING`
-- [ ] **Mathematical Fairness Proof Engine:** Implement `detectBlockingPairs()` reporting 0 blocking pairs on valid runs.
-- [ ] **FCFS vs. Stable Matching Benchmark:** Build side-by-side comparison demo showing blocking pairs in FCFS vs. 0 in AllotMate on identical data.
-- [ ] **DS Evaluator Walkthrough:** Rehearse mathematical stability proof and custom data structure complexity analysis.
-
----
-
-### 👤 Member 4: Integration, Testing, Docs & ML
-**Focus:** CLI Menu Flows, Unit Testing Harness, Benchmarks, Documentation & Isolated ML Microservice.
-
-#### 🔹 Phase 1: Project Docs, Workflow & CLI Design (20 Marks) — `COMPLETED`
-- [x] **Documentation System:** Co-authored PRD, SRS, UI/UX, Architecture, and Version Control documentation in `/docs`.
-- [x] **CLI Menu Specifications:** Defined numbered menu flows for coordinator and student roles (`docs/04_UIUX.md`).
-- [x] **Git Workflow Adherence:** Established PR Markdown templates and branch conventions.
-
-#### 🔹 Phase 2: CLI Implementation & Test Harness (30 Marks) — `CLI COMPLETED · ML DEFERRED`
-- [x] **CLI Admin Tool:** All coordinator menu states are implemented in `src/CLI.cpp` (PR #29 and `feature/m4-import-csv-load-test`):
-  - **[5] Run Allocation:** calls `AllocationService::runAllocation`. If the round is already allocated, it asks the coordinator to confirm before replacing the results (SRS edge case 7), and handles "another run in progress".
-  - **[6] View Allotment Results:** results grouped by elective, best CGPA first, with an elective filter (`0` = all) and a "Not allotted" list (SRS edge cases 1 and 5). All SQL stays in `ReportRepository`.
-  - **[7] View Waitlist:** a waitlist in front-of-line order from `ReportRepository::waitlistFor`. It never re-orders students; the AVL tree decides the order.
-  - **[8] Import Students from CSV:** validates the file with `CsvImporter`, shows each rejected row with its line number and reason, and inserts with `PostgresStudentRepo::bulkInsert` only after confirmation. Roll numbers already in the database are skipped and reported.
-  - **[2] Set Capacities** existed from Phase 1.
-- [x] **Automated CTest Suite:** Built by Member 3 (`tests/`, 4 suites). Member 4 runs it after every CLI change.
-- [ ] **Isolated ML Microservice Scaffold:** `DEFERRED`. Postponed until the team agrees on a scope (see Next Work).
-- [ ] **Demand Forecasting Model:** `DEFERRED`. The database holds one semester only, so there is no history to train on yet.
-
-#### 🔹 Phase 3: End-to-End System Testing & Demo Polish (50 Marks) — `IN PROGRESS`
-- [ ] **Collusion Detection Endpoint:** `DEFERRED` together with the ML microservice.
-- [x] **System-Wide Load Testing:** 1,500 students × 30 electives, run through the CLI. Every run gives the same result: 1,426 matched, 74 unmatched, 0 electives over capacity. `test_allocation` passes all 18 checks at this scale. A full allocation takes under 1 s on a Windows laptop. Details and timings are in [`docs/LOAD-TEST.md`](docs/LOAD-TEST.md).
-- [ ] **Full Team Demo Rehearsal:** Coordinate live presentation flow, backup output recording, and panel Q&A preparation.
-
----
-
-## 🧭 Next Work — Remarks per Member
+## 🧭 Status & Viva Prep — per Member
 
 > **Team STL rule** (also in `CLAUDE.md`): `vector`, `string`, streams, smart pointers, `map` and `set` are fine (OOP Unit 5). DS logic from the lectures must be **hand-written**: no `std::sort`, `<stack>`, `<queue>`, `std::priority_queue` or `std::list` in project logic, BST/AVL/linked list/graph built from our own nodes, and our own `HashTable` instead of `unordered_map`/`unordered_set`.
 
-### Member 1 — Dhruv Negi (DS / Algorithm)
-> ✅ **Already fixed for you:** the `HashTable is full` blocker. `HashTable` now rehashes at load factor 0.7 (commit `6ffdfe0` on PR #22), and allocation runs at 1,500 students. **Read `HashTable::rehash()` before the viva**: be ready to explain why the threshold is 0.7, why every key must be re-hashed (`hash = key % capacity`), and why value pointers are moved rather than copied.
+All planned features are built and merged. What remains for everyone is the **team demo rehearsal** on the demo laptop, starting from a fresh database: `docker compose down -v && docker compose up -d`.
 
-In priority order:
-1. **Implement `detectBlockingPairs()` and make it return the count (`int`).** This is the project's "fairness proof".
-   - Logic: for every student and every elective they ranked *above* their placement, that elective must be full of students who outrank them; otherwise it's a blocking pair. A working reference is `countBlockingPairs()` in `tests/test_allocation.cpp`. Write your own version inside the engine, using the engine's data structures.
-   - Then in `src/AllocationService.cpp`, replace `STABILITY_NOT_CHECKED` with `engine.detectBlockingPairs()`, so `RUN_LOG` records the real count instead of `NULL`.
-2. **Implement `generateFairnessReport()`:** average preference rank received, % of students who got their 1st choice, and the unmatched count.
-3. **FCFS vs stable-matching benchmark:** run a first-come-first-serve allocation and Gale–Shapley on the same data (`scripts/scale_seed_1500.sql`), and show FCFS produces blocking pairs while ours has 0.
-4. **STL rule clean-up:**
-   - `MatchingEngine::loadData` uses `std::unordered_set` for duplicate-ID checks; use your own `HashTable::contains()` instead.
-   - `Stack` is a thin wrapper over `std::vector`; give it its own storage (a top-index array or linked nodes), so "our stack" is truly ours.
-5. **DS viva prep:** complexity of the matching loop (O(N × M × log K)), plus the heap, the sparse matrix and hashing with rehash.
+### Member 1 — Anubhav Kiroula (Team Lead · Backend & DB)
+> ✅ **Done:** PostgreSQL schema, RAII connection, repositories, CSV bulk import (merge sort), `AllocationService` (one transaction, advisory-lock `RunLock`, `RUN_LOG` audit), 1,500-scale profiling, waitlists saved with every run and shown to students (FR-7, FR-2), SQL-injection fix in the CLI.
+
+Remaining: with team agreement, drop the two redundant indexes found by profiling (see `docs/PERFORMANCE.md`).
 
 ### Member 2 — Kritika Mundepi (OOP Architect)
-- `AVLTree<T>` and `ThreadedBST<T>` built from **our own nodes**, not wrapped around `std::map`/`std::set`. BST is the faculty's main DS focus.
-- Feed the AVL waitlist's in-order traversal into `WaitlistRepository::replaceWaitlist(electiveId, orderedIds)`; it is already built and tested.
-- Model unit tests and rule-of-five for the trees, as planned.
+> ✅ **Done:** `Person` polymorphism, `AVLTree` and `ThreadedBST` from our own nodes with Rule of 5, AVL waitlist in `Elective`, `MeritRankingReport`, `test_models`.
 
-### Member 4 — Gaurang Nauriyal (Integration / ML)
-> ✅ **Done:** CLI screens Run Allocation, View Results, View Waitlist and Import CSV, plus the 1,500 × 30 load test ([`docs/LOAD-TEST.md`](docs/LOAD-TEST.md)).
+Viva prep: AVL rotations (LL/RR/LR/RL) and why the waitlist stays O(log n); how the right threads replace the stack in the in-order walk; why a plain threaded BST degrades on sorted input while the AVL tree does not. Evaluator mode `[4]` and `[5]` show both trees live.
 
-Remaining:
-1. **Fairness report in the CLI:** once Member 1's `detectBlockingPairs()` returns a count, show it in the Run Allocation summary. It currently prints "pending".
-2. **Re-test View Waitlist** once Member 2's AVL waitlist is connected to `WaitlistRepository`. Until then the waitlist table is empty.
-3. **ML scope decision** (with the team or mentor): the collusion check works on current preference data, while demand forecasting would need past-semester data.
-4. **Found in the load test:** `test_db_layer` hard-codes roll numbers from the 100-student seed, so 2 checks fail on the 1,500-student dataset. The code under test is fine; discuss the test fix with Member 3.
-5. **Team demo rehearsal** and viva prep.
+### Member 3 — Gaurang Nauriyal (Integration / ML)
+> ✅ **Done:** CLI screens Run Allocation (with the fairness report), View Results, View Waitlist and Import CSV, plus the 1,500 × 30 load test ([`docs/LOAD-TEST.md`](docs/LOAD-TEST.md)).
 
-### Member 3 — Anubhav Kiroula (Backend / DB) — remaining
-- With team agreement, drop the two redundant indexes found by profiling (see `docs/PERFORMANCE.md`).
-- Team demo rehearsal.
+The ML microservice stays deferred (no past-semester data to train on).
+
+### Member 4 — Dhruv Negi (DS / Algorithm Lead)
+> ✅ **Done:** `SparseMatrix`, `HashTable` (rehash at load factor 0.7), own-storage `Stack`, `PriorityQueue`, the Gale–Shapley loop, `detectBlockingPairs()`, `FairnessReport` and the FCFS vs Gale–Shapley benchmark.
+
+Viva prep:
+- Why a Gale–Shapley result has **0 blocking pairs**, and why a zero-capacity elective can never form one.
+- How `countBlockingPairs()` stays O(students × preferences): one pass records each elective's lowest-priority holder.
+- The benchmark story: same 74% first-choice rate, but FCFS leaves 1,336 justified complaints.
+- Complexity of the matching loop, the heap, the sparse matrix, and `HashTable::rehash()` (why 0.7, why every key is re-hashed).
+- The `Stack` Rule of 5 and placement `new` (and why a moved-from stack restarts at capacity 10).
 
 ---
 
@@ -351,6 +211,7 @@ AllotMate/
 │   ├── LOAD-TEST.md             # 1,500 x 30 load test through the CLI
 │   └── PERFORMANCE.md           # Measured 1,500-scale benchmarks & EXPLAIN plans
 ├── include/                     # C++ header files & interfaces
+│   ├── AVLTree.h                # Custom AVL tree (waitlist priority order)
 │   ├── AllocationException.h    # Custom domain & database exception hierarchy
 │   ├── AllocationService.h      # End-to-end run: lock, match, save, audit
 │   ├── CLI.h                    # Interactive terminal interface
@@ -359,7 +220,8 @@ AllotMate/
 │   ├── CsvImporter.h            # CSV parse + validation + merge sort + de-dup
 │   ├── Elective.h               # Elective course domain model
 │   ├── HashTable.h              # Custom open-addressing hash table
-│   ├── MatchingEngine.h         # Gale-Shapley stable matching engine
+│   ├── MatchingEngine.h         # Gale-Shapley engine, blocking pairs, FairnessReport
+│   ├── MeritRankingReport.h     # CGPA merit ranking via threaded in-order walk
 │   ├── Person.h                 # Abstract base class
 │   ├── PostgresConnection.h     # RAII PostgreSQL client wrapper
 │   ├── PostgresElectiveRepo.h   # Repository<Elective> implementation
@@ -372,11 +234,13 @@ AllotMate/
 │   ├── Stack.h                  # Custom stack
 │   ├── Student.h                # Student domain model
 │   ├── StudentRecord.h          # Plain CSV row (persistence-free)
+│   ├── ThreadedBST.h            # Custom right-threaded BST (stack-less in-order)
 │   └── WaitlistRepository.h     # Atomic waitlist persistence
 ├── sql/                         # Auto-run by Docker on first start
 │   ├── 01_init_schema.sql       # 7-table DDL, constraints & indexes
 │   └── 02_seed_data.sql         # 100-student realistic seed script
 ├── scripts/                     # Run by hand (NOT auto-run)
+│   ├── benchmark_seed.sql       # N-student dataset for the FCFS benchmark (-v student_count=N)
 │   ├── explain_core_queries.sql # EXPLAIN ANALYZE index profiling
 │   ├── migrate_phase3.sql       # Upgrade existing DBs (nullable blocking pairs)
 │   └── scale_seed_1500.sql      # 1,500 students x 30 electives dataset
@@ -388,7 +252,7 @@ AllotMate/
 │   ├── CsvImporter.cpp
 │   ├── Elective.cpp
 │   ├── MatchingEngine.cpp
-│   ├── MatchingEngineTest.cpp   # Engine unit tests (Member 1)
+│   ├── MatchingEngineTest.cpp   # Engine unit tests (Member 4)
 │   ├── PostgresConnection.cpp
 │   ├── PostgresElectiveRepo.cpp
 │   ├── PostgresStudentRepo.cpp
@@ -400,11 +264,14 @@ AllotMate/
 │   └── main.cpp                 # Application entrypoint
 ├── tests/                       # CTest unit & integration tests
 │   ├── CMakeLists.txt
-│   ├── test_allocation.cpp      # End-to-end: capacity, stability, locking
+│   ├── *_demo.cpp               # 7 DS demos (AVL, threaded BST, waitlist, merit ranking); built by CI
+│   ├── test_allocation.cpp      # End-to-end: capacity, stability, waitlists, locking
 │   ├── test_csv_importer.cpp    # Pure-logic: CSV validation, merge sort, capacity
-│   └── test_db_layer.cpp        # Repository/DB integration (skips w/o DB)
+│   ├── test_db_layer.cpp        # Repository/DB integration (skips w/o DB)
+│   └── test_models.cpp          # Student/Elective edge cases, AVL & threaded BST
 ├── tools/
-│   └── benchmark_db.cpp         # 1,500-scale DB timings
+│   ├── benchmark_db.cpp         # 1,500-scale DB timings
+│   └── benchmark_matching.cpp   # FCFS vs Gale-Shapley: blocking pairs, first choice, time
 ├── data/                        # Sample datasets
 │   └── students_sample.csv      # Example bulk-import file
 ├── .env.example                 # Environment configuration template
