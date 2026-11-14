@@ -22,11 +22,11 @@
 
 | Module | Owner | Core DS used | Core OOP used |
 |---|---|---|---|
-| Matching Engine | Member 1 | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, exceptions |
+| Matching Engine | Member 4 | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, exceptions |
 | Domain Models | Member 2 | — | Inheritance, polymorphism, operator overloading |
-| Waitlist & Reporting | Member 1/2 | AVL Tree, Threaded BST, Hashing | Templates, iterators |
-| Persistence Layer | Member 3 | Sorting (bulk import) | RAII, Repository pattern |
-| Integration/Testing/Docs | Member 4 | — | Unit tests, benchmarks |
+| Waitlist & Reporting | Member 2/4 | AVL Tree, Threaded BST, Hashing | Templates, iterators |
+| Persistence Layer | Member 1 | Sorting (bulk import) | RAII, Repository pattern |
+| Integration/Testing/Docs | Member 3 | — | Unit tests, benchmarks |
 
 ---
 
@@ -289,7 +289,7 @@ POST /forecast/collusion-check
 | **3 — Backend/DB Engineer** | Postgres schema, libpqxx integration, bulk import at 1500-record scale, indexing | Supports both |
 | **4 — Integration, Testing, Docs & ML** | End-to-end testing, benchmarking, demo build, documentation, and (stretch) the isolated ML microservice | Ties the whole story together for the panel |
 
-*(If you're 5–6 members: split Member 4 into Testing+Docs and a dedicated ML/Dashboard owner.)*
+*(If you're 5–6 members: split Member 3 into Testing+Docs and a dedicated ML/Dashboard owner.)*
 
 ---
 

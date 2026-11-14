@@ -109,9 +109,9 @@ Never branch off a stale local `main` — always pull first, every single time, 
 
 | Example | Use case |
 |---|---|
-| `feature/m1-matching-engine` | New feature, Member 1, matching engine |
+| `feature/m4-matching-engine` | New feature, Member 4, matching engine |
 | `feature/m2-student-class` | New feature, Member 2, Student class |
-| `fix/m3-connection-leak` | Bug fix, Member 3, DB connection issue |
+| `fix/m1-connection-leak` | Bug fix, Member 1, DB connection issue |
 | `refactor/m2-repository-interface` | Refactor, Member 2, repository interface |
 | `chore/update-gitignore` | Housekeeping, no specific member needed |
 | `docs/update-srs-edge-cases` | Documentation update |
@@ -174,7 +174,7 @@ Paste terminal output, test results, or CLI screenshots if useful for the review
 # Start new work
 git checkout main
 git pull origin main
-git checkout -b feature/m1-priority-queue
+git checkout -b feature/m4-priority-queue
 
 # Work + commit often
 git add <specific files>
@@ -183,7 +183,7 @@ git commit -m "feat: add PriorityQueue insert with heap sift-up"
 # ... more small commits as you go ...
 
 # Push and open PR
-git push origin feature/m1-priority-queue
+git push origin feature/m4-priority-queue
 # → open PR into `dev` on GitHub, use template in Section 5
 ```
 

@@ -35,10 +35,10 @@ Each owner builds independently against agreed interfaces (parallel work, minima
 
 | Owner | Builds |
 |---|---|
-| Member 1 (DS/Algorithm) | `SparseMatrix`, `HashTable`, `Stack`-based backtracking, `PriorityQueue`, core Gale-Shapley loop in `MatchingEngine` |
+| Member 4 (DS/Algorithm) | `SparseMatrix`, `HashTable`, `Stack`-based backtracking, `PriorityQueue`, core Gale-Shapley loop in `MatchingEngine` |
 | Member 2 (OOP) | Full `Student`/`Coordinator`/`Elective` behavior, operator overloads, exception classes, `AVLTree`/`ThreadedBST` for waitlist/reporting |
-| Member 3 (Backend/DB) | `PostgresStudentRepo` and other repo implementations, bulk CSV import at scale, indexing, `.env` config handling |
-| Member 4 (Integration/Testing/ML) | Unit test scaffolding, CLI skeleton (Section 2 of UI/UX doc), begin ML microservice stub in parallel (isolated, no dependency on core progress) |
+| Member 1 (Backend/DB) | `PostgresStudentRepo` and other repo implementations, bulk CSV import at scale, indexing, `.env` config handling |
+| Member 3 (Integration/Testing/ML) | Unit test scaffolding, CLI skeleton (Section 2 of UI/UX doc), begin ML microservice stub in parallel (isolated, no dependency on core progress) |
 
 **Exit criteria:** each module has passing unit tests in isolation; no module depends on another module's *implementation*, only its *interface*.
 
@@ -70,7 +70,7 @@ Each owner builds independently against agreed interfaces (parallel work, minima
 
 - `main` — always demo-stable, protected, merge via PR only.
 - `dev` — integration branch, where Phase 4+ work lands before `main`.
-- `feature/<member>-<module>` — individual work, e.g. `feature/m1-matching-engine`.
+- `feature/<member>-<module>` — individual work, e.g. `feature/m4-matching-engine`.
 - PR requires at least one other member's review before merging to `dev`.
 - Commit messages: `[module] short description` (e.g., `[matching-engine] implement stack-based backtracking`).
 

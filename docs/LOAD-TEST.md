@@ -1,7 +1,7 @@
-# System Load Test — 1,500 Students × 30 Electives (Member 4)
+# System Load Test — 1,500 Students × 30 Electives (Member 3)
 
 End-to-end load test of AllotMate at full scale, run **through the interactive CLI**
-(the way a coordinator uses it), plus Member 3's `benchmark_db` tool for comparison
+(the way a coordinator uses it), plus Member 1's `benchmark_db` tool for comparison
 with [`PERFORMANCE.md`](PERFORMANCE.md).
 
 Run on 2026-11-13 by Gaurang Nauriyal.
@@ -49,7 +49,7 @@ allocation's own cost is roughly *session time minus baseline*.
 
 ## Comparison with `PERFORMANCE.md`
 
-Member 3 measured the same full allocation at **186 – 196 ms** (Ubuntu). On this
+Member 1 measured the same full allocation at **186 – 196 ms** (Ubuntu). On this
 Windows machine it takes about **530 – 910 ms**, roughly 3–5× slower.
 
 The matching code and the data are the same, so the difference comes from the
@@ -75,7 +75,7 @@ At the time of this test, on the 1,500-student dataset, `test_db_layer` reports 
 Both compare against roll numbers from `sql/02_seed_data.sql` (`2024CS001`, `2024CS004`),
 but in the scale dataset student 1 is `2024SC0001`. The code under test is fine; the
 test data assumption is not. Both checks pass on the normal 100-student seed.
-Suggested fix for the test's owner (Member 3): read the expected roll numbers from the
+Suggested fix for the test's owner (Member 1): read the expected roll numbers from the
 `STUDENT` table by `student_id` instead of hard-coding them.
 
 ## How to reproduce
