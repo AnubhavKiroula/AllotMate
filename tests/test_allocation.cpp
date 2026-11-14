@@ -8,6 +8,8 @@
 //   * uniqueness  : a student has at most one allotment per round
 //   * validity    : a student is only placed in an elective they ranked
 //   * stability   : no blocking pair exists in the saved result
+//   * waitlists   : students wait exactly for the electives they ranked above
+//                   their result, in AVL priority order
 //   * re-run rule : an allocated round is never silently overwritten
 //   * locking     : a second concurrent run is refused
 //   * determinism : re-running gives the same allotments
@@ -28,6 +30,7 @@
 #include "PostgresElectiveRepo.h"
 #include "AllocationService.h"
 #include "AllocationException.h"
+#include "ReportRepository.h"
 
 static int g_failures = 0;
 
@@ -114,6 +117,12 @@ static void restoreSeedState(PostgresConnection& conn) {
     conn.executeCommand("UPDATE STUDENT SET status = 'UNASSIGNED';");
     conn.executeCommand("UPDATE ELECTIVE SET seats_filled = 0;");
     conn.executeCommand("DELETE FROM RUN_LOG WHERE outcome_summary LIKE 'TEST-ROUND%';");
+    conn.executeCommand("DELETE FROM WAITLIST;"); // the seed has no waitlist rows
+}
+
+// First column of the first row of a COUNT(*) query.
+static int countOf(PostgresConnection& conn, const std::string& sql) {
+    return conn.executeQuery(sql)[0][0].as<int>();
 }
 
 static void testRunProducesValidStableResult(PostgresConnection& conn) {
@@ -180,6 +189,75 @@ static void testRunProducesValidStableResult(PostgresConnection& conn) {
         logRow[0]["blocking_pairs_found"].as<int>() == 0,
         "RUN_LOG stores the actual blocking-pair count (0 for stable matching)"
     );
+}
+
+// Checks the waitlists saved by the run above (FR-7), straight from the DB.
+static void testWaitlistsFollowTheResult(PostgresConnection& conn) {
+    std::cout << "testWaitlistsFollowTheResult\n";
+    const std::string round = conn.quoteLiteral(ROUND);
+
+    // Rows a student should wait for: an elective ranked above their result,
+    // or any ranked elective if they got nothing.
+    const std::string shouldWait =
+        "SELECT count(*) FROM PREFERENCE p "
+        "LEFT JOIN ALLOTMENT a ON a.student_id = p.student_id AND a.round = " + round + " "
+        "LEFT JOIN PREFERENCE pa ON pa.student_id = a.student_id AND pa.elective_id = a.elective_id "
+        "WHERE a.student_id IS NULL OR p.rank < pa.rank;";
+    const int expected = countOf(conn, shouldWait);
+    check(expected > 0, "the seed data leaves some students waiting (test is not vacuous)");
+    check(countOf(conn, "SELECT count(*) FROM WAITLIST;") == expected,
+          "every student waits for every elective they ranked above their result");
+
+    check(countOf(conn,
+              "SELECT count(*) FROM WAITLIST w "
+              "LEFT JOIN PREFERENCE pw ON pw.student_id = w.student_id AND pw.elective_id = w.elective_id "
+              "LEFT JOIN ALLOTMENT a ON a.student_id = w.student_id AND a.round = " + round + " "
+              "LEFT JOIN PREFERENCE pa ON pa.student_id = a.student_id AND pa.elective_id = a.elective_id "
+              "WHERE pw.student_id IS NULL OR (a.student_id IS NOT NULL AND pw.rank >= pa.rank);") == 0,
+          "nobody waits for an elective they did not rank above their result");
+
+    check(countOf(conn,
+              "SELECT count(*) FROM WAITLIST w1 "
+              "JOIN WAITLIST w2 ON w2.elective_id = w1.elective_id AND w1.position < w2.position "
+              "JOIN STUDENT s1 ON s1.student_id = w1.student_id "
+              "JOIN STUDENT s2 ON s2.student_id = w2.student_id "
+              "WHERE s1.cgpa < s2.cgpa OR (s1.cgpa = s2.cgpa AND s1.student_id > s2.student_id);") == 0,
+          "each waitlist is in AVL priority order (CGPA, then lower id)");
+
+    // Stability means nobody waiting outranks anyone inside, and every
+    // elective with a waitlist is full.
+    check(countOf(conn,
+              "SELECT count(*) FROM WAITLIST w "
+              "JOIN ALLOTMENT a ON a.elective_id = w.elective_id AND a.round = " + round + " "
+              "JOIN STUDENT sw ON sw.student_id = w.student_id "
+              "JOIN STUDENT sa ON sa.student_id = a.student_id "
+              "WHERE sw.cgpa > sa.cgpa OR (sw.cgpa = sa.cgpa AND sw.student_id < sa.student_id);") == 0,
+          "everyone allotted to an elective outranks everyone waiting for it");
+    check(countOf(conn,
+              "SELECT count(*) FROM ELECTIVE e WHERE e.seats_filled < e.capacity "
+              "AND EXISTS (SELECT 1 FROM WAITLIST w WHERE w.elective_id = e.elective_id);") == 0,
+          "every elective with a waitlist is full");
+
+    check(countOf(conn,
+              "SELECT count(*) FROM STUDENT s WHERE (s.status = 'WAITLISTED') <> ("
+              "NOT EXISTS (SELECT 1 FROM ALLOTMENT a WHERE a.student_id = s.student_id AND a.round = " + round + ") "
+              "AND EXISTS (SELECT 1 FROM WAITLIST w WHERE w.student_id = s.student_id));") == 0,
+          "status is WAITLISTED exactly for unmatched students on a waitlist");
+
+    // The student status screen (FR-2) must find all of one student's
+    // waitlists, best-ranked choice first.
+    pqxx::result busiest = conn.executeQuery(
+        "SELECT s.roll_no, count(*) FROM WAITLIST w JOIN STUDENT s ON s.student_id = w.student_id "
+        "GROUP BY s.roll_no ORDER BY count(*) DESC, s.roll_no LIMIT 1;");
+    std::vector<WaitingForRow> rows =
+        ReportRepository(conn).waitlistPositionsOf(busiest[0][0].as<std::string>());
+    bool bestChoiceFirst = true;
+    for (size_t i = 1; i < rows.size(); i++) {
+        if (rows[i].choiceRank <= rows[i - 1].choiceRank) bestChoiceFirst = false;
+    }
+    check(static_cast<int>(rows.size()) == busiest[0][1].as<int>() && bestChoiceFirst &&
+              rows[0].position >= 1 && rows[0].position <= rows[0].waitingTotal,
+          "waitlistPositionsOf shows every waitlist of a student, best choice first");
 }
 
 // Proves the stability oracle is not vacuous: break a stable result on purpose
@@ -287,6 +365,7 @@ int main() {
     restoreSeedState(conn); // clear leftovers from an interrupted earlier run
     try {
         testRunProducesValidStableResult(conn);
+        testWaitlistsFollowTheResult(conn);
         testOracleDetectsABlockingPair(conn);
         testRerunNeedsExplicitPermission(conn);
         testConcurrentRunIsRefused(conn, cfg);

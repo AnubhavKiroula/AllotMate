@@ -54,6 +54,11 @@ class MatchingEngine {
         // Elective id for each student, in getStudents() order (-1 = unmatched).
         std::vector<int> getAssignedElectiveIds() const;
 
+        // One copy of every elective with its AVL waitlist filled in (FR-7).
+        // A student waits for every elective they ranked above the one they
+        // got, or for all their choices if they are unmatched.
+        std::vector<Elective> buildWaitlists() const;
+
         // The same checks for ANY assignment, where assignedElectiveIds[i] is
         // the elective of students[i] (-1 = unmatched). The FCFS baseline in
         // tools/benchmark_matching.cpp is judged by exactly these rules.

@@ -73,3 +73,16 @@ bool Elective::promoteNext(Student& promoted) {
 int Elective::waitlistSize() const {
     return waitlist.size();
 }
+
+// The AVL in-order walk gives the LOWEST priority first, so it is read
+// backwards: index 0 is the student who gets the next free seat.
+vector<int> Elective::waitlistOrder() const {
+    vector<int> lowestFirst;
+    waitlist.inorder([&](const Student& s) { lowestFirst.push_back(s.getId()); });
+
+    vector<int> frontFirst;
+    for (int i = static_cast<int>(lowestFirst.size()) - 1; i >= 0; i--) {
+        frontFirst.push_back(lowestFirst[i]);
+    }
+    return frontFirst;
+}

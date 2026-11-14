@@ -47,7 +47,8 @@ private:
 
     bool roundAlreadyAllocated(const std::string& round);
 
-    // Writes the engine's results for `round` atomically; returns matched count.
+    // Writes the engine's allotments for `round` and every elective's waitlist
+    // in one transaction; returns the matched count.
     int saveResults(const MatchingEngine& engine, const std::string& round);
 
 public:

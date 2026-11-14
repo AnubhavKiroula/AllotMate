@@ -240,6 +240,29 @@ std::vector<int> MatchingEngine::getAssignedElectiveIds() const {
     return assigned;
 }
 
+std::vector<Elective> MatchingEngine::buildWaitlists() const {
+    // Fresh copies (empty waitlists), plus elective id -> position in the vector.
+    std::vector<Elective> waitlists;
+    HashTable<int, int> positionOf;
+    for(const Elective& elective : electives){
+        positionOf.insert(elective.getId(), static_cast<int>(waitlists.size()));
+        waitlists.push_back(Elective(elective.getId(), elective.getName(), elective.getCapacity()));
+    }
+
+    const std::vector<int> assigned = getAssignedElectiveIds();
+
+    for(std::size_t i = 0; i < students.size(); ++i){
+        // Same walk as countBlockingPairs: stop at the elective the student got.
+        for(int preferredElectiveId : students[i].getPreferenceList()){
+            if(preferredElectiveId == assigned[i]) break;
+
+            // The AVL tree keeps each waitlist ordered by priority (CGPA, then lower ID).
+            waitlists[positionOf.find(preferredElectiveId)].addToWaitlist(students[i]);
+        }
+    }
+    return waitlists;
+}
+
 int MatchingEngine::countBlockingPairs(
     const std::vector<Student>& students,
     const std::vector<Elective>& electives,

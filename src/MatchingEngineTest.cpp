@@ -324,6 +324,22 @@ int main() {
 
     std::cout << "Fairness report test: passed\n";
 
+    // Test waitlists for the same result: Riya got Data Science (her rank 2)
+    // and Neha got nothing, so both wait for AI, Neha (9.0) ahead of Riya
+    // (8.5). Aman got his first choice, so nobody waits for Data Science.
+    for (const Elective& elective : engine.buildWaitlists()) {
+        std::vector<int> expected;
+        if (elective.getId() == 10) {
+            expected = {103, 102};
+        }
+        if (elective.waitlistOrder() != expected) {
+            std::cerr << "FAIL: Wrong waitlist for elective " << elective.getId() << '\n';
+            return 1;
+        }
+    }
+
+    std::cout << "Waitlist test: passed\n";
+
     // Test countBlockingPairs on an unfair assignment, like FCFS can produce:
     // Riya (8.5) took AI first, so Aman (9.5) ended up in Data Science.
     //   (Aman, AI) blocks: Aman prefers AI, and AI prefers Aman to Riya.
