@@ -114,6 +114,11 @@ add_executable(benchmark_db tools/benchmark_db.cpp)
 target_link_libraries(benchmark_db PRIVATE allotmate_core)
 target_compile_options(benchmark_db PRIVATE ${ALLOTMATE_WARNINGS})
 
+# --- Tools: FCFS vs Gale-Shapley matching benchmark ---
+add_executable(benchmark_matching tools/benchmark_matching.cpp)
+target_link_libraries(benchmark_matching PRIVATE allotmate_core)
+target_compile_options(benchmark_matching PRIVATE ${ALLOTMATE_WARNINGS})
+
 # --- Tests (CTest) ---
 option(ALLOTMATE_BUILD_TESTS "Build AllotMate unit/integration tests" ON)
 if(ALLOTMATE_BUILD_TESTS)

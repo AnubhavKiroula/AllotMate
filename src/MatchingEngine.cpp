@@ -1,9 +1,8 @@
 #include "MatchingEngine.h"
 #include "AllocationException.h"
-#include <unordered_set>
+#include <stdexcept>
 #include <utility>
 #include <vector>
-#include <algorithm>
 
 void MatchingEngine::loadData(
     const std::vector<Student>& inputStudents,
@@ -14,31 +13,33 @@ void MatchingEngine::loadData(
     HashTable<int, Elective> newElectiveIndex;
     SparseMatrix newPrefMatrix;
 
-    std::unordered_set<int> studentIds;
-    std::unordered_set<int> electiveIds;
+    HashTable<int, bool> studentIds;
+    HashTable<int, bool> electiveIds;
 
     std::vector<Student> newStudents = inputStudents;
     std::vector<Elective> newElectives = inputElectives;
 
     //Validate and index electives.
     for (const Elective& elective : newElectives){
-        if(!electiveIds.insert(elective.getId()).second){
+        if(electiveIds.contains(elective.getId())){
             throw AllocationException::InvalidPreferenceException(
                 "Duplicate elective ID."
             );
         }
 
+        electiveIds.insert(elective.getId(), true);
         newElectiveIndex.insert(elective.getId(), elective);
     }
 
     //Validate and index students.
     for(Student& student : newStudents){
-        if(!studentIds.insert(student.getId()).second){
+        if(studentIds.contains(student.getId())){
             throw AllocationException::InvalidPreferenceException(
                 "Duplicate student ID."
             );
         }
 
+        studentIds.insert(student.getId(), true);
         student.setStatus(Status::UNMATCHED);
 
         const std::vector<int>& preferences= student.getPreferenceList();
@@ -46,7 +47,7 @@ void MatchingEngine::loadData(
         for(std::size_t i=0; i < preferences.size(); ++i){
             int electiveId = preferences[i];
 
-            if(electiveIds.find(electiveId)== electiveIds.end()){
+            if(!electiveIds.contains(electiveId)){
                 throw AllocationException::InvalidPreferenceException(
                     "Student preference references an unkown elective ID."
                 );
@@ -172,14 +173,11 @@ void MatchingEngine::runGaleShapley() {
         }
 
         // Otherwise, replace the lowest-ranked assigned student.
-        auto position = std::find(
-            assignedStudents.begin(),
-            assignedStudents.end(),
-            lowestPriorityId
-        );
-
-        if(position != assignedStudents.end()){
-            *position = studentId;
+        for(int& assignedId : assignedStudents){
+            if(assignedId == lowestPriorityId){
+                assignedId = studentId;
+                break;
+            }
         }
 
         Student& displacedStudent = studentIndex.find(lowestPriorityId);
@@ -224,12 +222,136 @@ int MatchingEngine::getAssignedElectiveId(int studentId) const{
     return -1; // Student is unmatched.
 }
 
-void MatchingEngine::detectBlockingPairs() {
-    // Phase 4: Implement blocking-pair detection later.
+std::vector<int> MatchingEngine::getAssignedElectiveIds() const {
+    // Turn electiveAssignments (elective -> students) around once, so we
+    // don't search every elective again for every student.
+    HashTable<int, int> electiveOfStudent;
+    for(const Elective& elective : electives){
+        for(int studentId : electiveAssignments.find(elective.getId())){
+            electiveOfStudent.insert(studentId, elective.getId());
+        }
+    }
+
+    std::vector<int> assigned;
+    for(const Student& student : students){
+        const int studentId = student.getId();
+        assigned.push_back(electiveOfStudent.contains(studentId) ? electiveOfStudent.find(studentId) : -1);
+    }
+    return assigned;
 }
 
-void MatchingEngine::generateFairnessReport() {
-    // Phase 4: Implement fairness reporting later.
+int MatchingEngine::countBlockingPairs(
+    const std::vector<Student>& students,
+    const std::vector<Elective>& electives,
+    const std::vector<int>& assignedElectiveIds
+){
+    if(assignedElectiveIds.size() != students.size()){
+        throw std::invalid_argument("countBlockingPairs: one assignment is needed per student.");
+    }
+
+    // Per elective: capacity, seats taken, and the index (in students) of
+    // the lowest-priority student it holds (-1 while it holds nobody).
+    HashTable<int, int> capacity;
+    HashTable<int, int> seatsTaken;
+    HashTable<int, int> weakestHolder;
+
+    for(const Elective& elective : electives){
+        capacity.insert(elective.getId(), elective.getCapacity());
+        seatsTaken.insert(elective.getId(), 0);
+        weakestHolder.insert(elective.getId(), -1);
+    }
+
+    for(std::size_t i = 0; i < students.size(); ++i){
+        const int electiveId = assignedElectiveIds[i];
+        if(electiveId == -1) continue;
+
+        ++seatsTaken.find(electiveId);
+        int& weakest = weakestHolder.find(electiveId);
+        if(weakest == -1 || students[i] < students[weakest]){
+            weakest = static_cast<int>(i);
+        }
+    }
+
+    int blockingPairCount = 0;
+
+    for(std::size_t i = 0; i < students.size(); ++i){
+        const Student& student = students[i];
+
+        // Check only electives the student prefers over their current allocation.
+        // An unmatched student (-1) prefers every elective on their list.
+        for(int preferredElectiveId : student.getPreferenceList()){
+            if(preferredElectiveId == assignedElectiveIds[i]) break;
+
+            // An elective with an available seat can accept this student.
+            const bool hasFreeSeat = seatsTaken.find(preferredElectiveId) < capacity.find(preferredElectiveId);
+
+            // A full elective blocks if it prefers this student over the
+            // lowest-priority student it holds.
+            const int weakest = weakestHolder.find(preferredElectiveId);
+            const bool prefersThisStudent = weakest != -1 && students[weakest] < student;
+
+            // A zero-capacity elective has no free seat and nobody to replace,
+            // so it can never form a blocking pair (SRS #3).
+            if(hasFreeSeat || prefersThisStudent){
+                ++blockingPairCount;
+            }
+        }
+    }
+    return blockingPairCount;
+}
+
+FairnessReport MatchingEngine::buildFairnessReport(
+    const std::vector<Student>& students,
+    const std::vector<Elective>& electives,
+    const std::vector<int>& assignedElectiveIds
+){
+    if(assignedElectiveIds.size() != students.size()){
+        throw std::invalid_argument("buildFairnessReport: one assignment is needed per student.");
+    }
+
+    FairnessReport report;
+    report.totalStudents = static_cast<int>(students.size());
+    int totalAssignedRank = 0;
+
+    for(std::size_t i = 0; i < students.size(); ++i){
+        const int assignedElectiveId = assignedElectiveIds[i];
+
+        //Count students who did not receive an elective.
+        if(assignedElectiveId == -1){
+            ++report.unmatched;
+            continue;
+        }
+        ++report.matched;
+
+        // Find the rank of the elective the student received (1 = first choice).
+        const std::vector<int>& preferences = students[i].getPreferenceList();
+        for(std::size_t rank = 0; rank < preferences.size(); ++rank){
+            if(preferences[rank] == assignedElectiveId){
+                totalAssignedRank += static_cast<int>(rank) + 1;
+                if(rank == 0){
+                    ++report.firstChoice;
+                }
+                break;
+            }
+        }
+    }
+
+    if(report.matched > 0){
+        report.averageRank = static_cast<double>(totalAssignedRank) / report.matched;
+    }
+    if(report.totalStudents > 0){
+        report.firstChoicePercent = 100.0 * report.firstChoice / report.totalStudents;
+    }
+    report.blockingPairs = countBlockingPairs(students, electives, assignedElectiveIds);
+    return report;
+}
+
+int MatchingEngine::detectBlockingPairs() const {
+    return countBlockingPairs(students, electives, getAssignedElectiveIds());
+}
+
+FairnessReport MatchingEngine::generateFairnessReport() const {
+    return buildFairnessReport(students, electives, getAssignedElectiveIds());
 }
 
 const std::vector<Student>& MatchingEngine::getStudents() const {

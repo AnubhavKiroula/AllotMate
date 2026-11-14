@@ -10,6 +10,7 @@ struct AllocationSummary {
     int matched;
     int unmatched;
     int runId; // RUN_LOG id of this run
+    FairnessReport fairness; // first-choice %, average rank, blocking pairs (FR-6)
 };
 
 // RAII guard for the database-level "one allocation at a time" lock.
