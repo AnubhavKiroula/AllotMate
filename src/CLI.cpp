@@ -285,9 +285,11 @@ void CLI::viewPreferences() {
         std::string rollNo;
         std::cin >> rollNo;
 
-        // Look up student
+        // Look up student. quoteLiteral escapes the typed text, so input like
+        // ' OR '1'='1 is searched for literally instead of changing the query.
         pqxx::result student = db.executeQuery(
-            "SELECT student_id, name, cgpa FROM STUDENT WHERE roll_no = '" + rollNo + "';"
+            "SELECT student_id, name, cgpa FROM STUDENT WHERE roll_no = " +
+            db.quoteLiteral(rollNo) + ";"
         );
         if (student.empty()) {
             std::cout << "\n  [!] No student found with roll number: " << rollNo << "\n";
@@ -689,7 +691,8 @@ void CLI::runStudentMenu() {
 
 // -----------------------------------------------------------
 // viewStudentStatus() -- Student option 1
-// Student enters roll number, sees their allotment status.
+// Student enters roll number, sees their allotment status and
+// their place on every waitlist they are on (FR-2).
 // -----------------------------------------------------------
 void CLI::viewStudentStatus() {
     printHeader("My Allotment Status");
@@ -698,13 +701,15 @@ void CLI::viewStudentStatus() {
     std::cin >> rollNo;
 
     try {
+        // quoteLiteral escapes the typed text, so input like ' OR '1'='1
+        // cannot change the query and show another student's record.
         pqxx::result result = db.executeQuery(
             "SELECT s.name, s.roll_no, s.cgpa, s.branch, s.status, "
             "       e.name AS elective_name "
             "FROM STUDENT s "
             "LEFT JOIN ALLOTMENT a ON s.student_id = a.student_id "
             "LEFT JOIN ELECTIVE e  ON a.elective_id = e.elective_id "
-            "WHERE s.roll_no = '" + rollNo + "';"
+            "WHERE s.roll_no = " + db.quoteLiteral(rollNo) + ";"
         );
 
         if (result.empty()) {
@@ -718,10 +723,24 @@ void CLI::viewStudentStatus() {
         std::cout << "  CGPA:    " << result[0]["cgpa"].c_str()      << "\n";
         std::cout << "  Branch:  " << result[0]["branch"].c_str()    << "\n";
         std::cout << "  Status:  " << result[0]["status"].c_str()    << "\n";
-        if (!result[0]["elective_name"].is_null()) {
+        const bool allotted = !result[0]["elective_name"].is_null();
+        if (allotted) {
             std::cout << "  Allotted Elective: " << result[0]["elective_name"].c_str() << "\n";
         } else {
-            std::cout << "  Allotted Elective: Not yet allotted (allocation pending)\n";
+            std::cout << "  Allotted Elective: none\n";
+        }
+
+        // Waitlists for the electives this student ranked above their result.
+        ReportRepository reports(db);
+        std::vector<WaitingForRow> waiting = reports.waitlistPositionsOf(rollNo);
+        if (!waiting.empty()) {
+            std::cout << "\n  Waitlisted for (you move up when a seat frees):\n";
+            for (const WaitingForRow& w : waiting) {
+                std::cout << "    Choice #" << w.choiceRank << ": " << w.electiveName
+                          << " -- position " << w.position << " of " << w.waitingTotal << "\n";
+            }
+        } else if (!allotted) {
+            std::cout << "  (No allocation has run yet, or no preferences were submitted.)\n";
         }
 
     } catch (const AllocationException::DatabaseException& e) {
@@ -988,6 +1007,12 @@ int CLI::getIntInput(const std::string& prompt) const {
     int value = 0;
     std::cout << prompt;
     while (!(std::cin >> value)) {
+        // End of input (Ctrl+D / Ctrl+Z, or a piped file that ran out) can
+        // never become a number, so stop instead of asking forever. main()
+        // catches this, and the CLI's destructor still closes the connection.
+        if (std::cin.eof()) {
+            throw std::runtime_error("Input closed (end of file). Exiting AllotMate.");
+        }
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cout << "  [!] Please enter a number: ";

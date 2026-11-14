@@ -21,6 +21,11 @@ public:
     // (e.g. the same student listed twice) the old waitlist is left untouched.
     void replaceWaitlist(int electiveId, const std::vector<int>& orderedStudentIds);
 
+    // The same, but inside a transaction the caller owns and commits. The
+    // allocation run uses this to save allotments and waitlists together.
+    static void replaceWaitlist(pqxx::work& txn, int electiveId,
+                                const std::vector<int>& orderedStudentIds);
+
     // Returns the student ids waiting for an elective, front of the line first.
     std::vector<int> loadWaitlist(int electiveId);
 };

@@ -25,7 +25,7 @@ Run on 2026-11-13 by Gaurang Nauriyal.
 | Electives over capacity after the run | **0** |
 | Allotment rows saved for `Round 1` | 1,426 (equals "matched") |
 | `test_allocation` on the 1,500 dataset | **All 18 checks pass**, including "no blocking pairs in the saved result" |
-| `RUN_LOG.blocking_pairs_found` | `NULL` for every run, as intended until `detectBlockingPairs()` is implemented |
+| `RUN_LOG.blocking_pairs_found` | `NULL` for every run at the time of this test, as intended until `detectBlockingPairs()` was implemented. Since PR #31 every run stores the real count (0). |
 | View Results, all electives | 30 elective groups, 1,500 student lines, totals 1,426 / 74 |
 
 ## Timing
@@ -62,9 +62,12 @@ cause, not a measured one.
 **Conclusion:** a full 1,500-student allocation finishes in **under 1 second** through
 the CLI on a normal Windows laptop, which is fine for the live demo.
 
-## Issue found: `test_db_layer` assumes the 100-student seed
+## Issue found: `test_db_layer` assumed the 100-student seed (fixed)
 
-On the 1,500-student dataset, `test_db_layer` reports 2 failed checks:
+> **Fixed:** the test now reads the roll numbers of students 1 and 4 from the
+> `STUDENT` table, and passes on both the 100- and the 1,500-student datasets.
+
+At the time of this test, on the 1,500-student dataset, `test_db_layer` reports 2 failed checks:
 
 - `allotmentResults filters by elective`
 - `waitlistFor returns the queue front first`

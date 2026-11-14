@@ -192,11 +192,17 @@ static void testReportQueries(PostgresConnection& conn) {
     std::vector<int> originalWaitlist = waitlists.loadWaitlist(2);
     waitlists.replaceWaitlist(2, std::vector<int>{ 4, 3 });
 
+    // Roll numbers differ between seeds (2024CS... vs BENCH...), so read them.
+    const std::string rollOf1 = conn.executeQuery(
+        "SELECT roll_no FROM STUDENT WHERE student_id = 1;")[0][0].as<std::string>();
+    const std::string rollOf4 = conn.executeQuery(
+        "SELECT roll_no FROM STUDENT WHERE student_id = 4;")[0][0].as<std::string>();
+
     std::vector<AllotmentRow> all = reports.allotmentResults(round);
     check(all.size() == 2, "allotmentResults returns both allotments of the round");
 
     std::vector<AllotmentRow> filtered = reports.allotmentResults(round, 2);
-    check(filtered.size() == 1 && filtered[0].rollNo == "2024CS001",
+    check(filtered.size() == 1 && filtered[0].rollNo == rollOf1,
           "allotmentResults filters by elective");
 
     pqxx::result studentCount = conn.executeQuery("SELECT count(*) FROM STUDENT;");
@@ -205,7 +211,7 @@ static void testReportQueries(PostgresConnection& conn) {
           "unmatchedStudents lists everyone without an allotment");
 
     std::vector<WaitlistRow> queue = reports.waitlistFor(2);
-    check(queue.size() == 2 && queue[0].position == 1 && queue[0].rollNo == "2024CS004",
+    check(queue.size() == 2 && queue[0].position == 1 && queue[0].rollNo == rollOf4,
           "waitlistFor returns the queue front first");
 
     // Clean up so the seed is unchanged.

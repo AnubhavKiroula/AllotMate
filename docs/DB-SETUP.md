@@ -23,7 +23,7 @@ Ensure your `.env` file contains the following default credentials:
 
 ```ini
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 DB_NAME=allotmate
 DB_USER=postgres
 DB_PASSWORD=postgres
@@ -43,8 +43,8 @@ docker compose up -d
 ```
 
 ### What happens automatically:
-1. Postgres 16 starts and binds to `localhost:5432`.
-2. Initial schema migrations in [`sql/01_init_schema.sql`](file:///c:/Users/Anubhav%20Kiroula/OneDrive/Documents/PBL/AllotMate/sql/01_init_schema.sql) and seed data in [`sql/02_seed_data.sql`](file:///c:/Users/Anubhav%20Kiroula/OneDrive/Documents/PBL/AllotMate/sql/02_seed_data.sql) are automatically executed by Postgres on the initial container run.
+1. Postgres 16 starts and binds to `localhost:5433` (the `DB_PORT` from `.env`; 5432 if it is unset), so it does not clash with a locally installed PostgreSQL.
+2. Initial schema migrations in [`sql/01_init_schema.sql`](../sql/01_init_schema.sql) and seed data in [`sql/02_seed_data.sql`](../sql/02_seed_data.sql) are automatically executed by Postgres on the initial container run.
 3. Data is persisted in a named volume (`pgdata`), surviving container restarts.
 
 ### Useful Docker Commands:
@@ -69,7 +69,7 @@ Any team member can inspect the database visually using pgAdmin 4:
    - **Name**: `AllotMate Local`
 4. In the **Connection** tab:
    - **Host name / address**: `localhost`
-   - **Port**: `5432`
+   - **Port**: `5433`
    - **Maintenance database**: `allotmate`
    - **Username**: `postgres` (or your value from `.env`)
    - **Password**: `postgres` (or your value from `.env`)

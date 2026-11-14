@@ -6,27 +6,30 @@
 WaitlistRepository::WaitlistRepository(PostgresConnection& connection)
     : db(connection) {}
 
+void WaitlistRepository::replaceWaitlist(pqxx::work& txn, int electiveId,
+                                         const std::vector<int>& orderedStudentIds) {
+    txn.exec("DELETE FROM WAITLIST WHERE elective_id = " + std::to_string(electiveId) + ";");
+
+    if (!orderedStudentIds.empty()) {
+        std::ostringstream sql;
+        sql << "INSERT INTO WAITLIST (student_id, elective_id, position) VALUES ";
+        for (size_t i = 0; i < orderedStudentIds.size(); i++) {
+            if (i > 0) {
+                sql << ", ";
+            }
+            sql << "(" << orderedStudentIds[i] << ", " << electiveId << ", " << (i + 1) << ")";
+        }
+        sql << ";";
+        txn.exec(sql.str());
+    }
+}
+
 void WaitlistRepository::replaceWaitlist(int electiveId, const std::vector<int>& orderedStudentIds) {
     try {
         // One transaction for delete + insert. If the insert fails, txn is
         // destroyed without commit() and PostgreSQL rolls the delete back too.
         pqxx::work txn(db.getRawConnection());
-
-        txn.exec("DELETE FROM WAITLIST WHERE elective_id = " + std::to_string(electiveId) + ";");
-
-        if (!orderedStudentIds.empty()) {
-            std::ostringstream sql;
-            sql << "INSERT INTO WAITLIST (student_id, elective_id, position) VALUES ";
-            for (size_t i = 0; i < orderedStudentIds.size(); i++) {
-                if (i > 0) {
-                    sql << ", ";
-                }
-                sql << "(" << orderedStudentIds[i] << ", " << electiveId << ", " << (i + 1) << ")";
-            }
-            sql << ";";
-            txn.exec(sql.str());
-        }
-
+        replaceWaitlist(txn, electiveId, orderedStudentIds);
         txn.commit();
     } catch (const AllocationException&) {
         throw;

@@ -116,6 +116,18 @@ static void testWaitlistPromotesHighestPriorityFirst() {
     check(!e.hasSeat(), "the promoted student takes the free seat");
 }
 
+static void testWaitlistOrderIsFrontFirst() {
+    std::cout << "testWaitlistOrderIsFrontFirst\n";
+    Elective e(4, "Order", 0);
+    e.addToWaitlist(Student(7, "Kabir", 8.2f));
+    e.addToWaitlist(Student(9, "Neel", 9.4f));
+    e.addToWaitlist(Student(5, "Tara", 7.9f));
+    e.addToWaitlist(Student(3, "Isha", 9.4f));
+    check(e.waitlistOrder() == std::vector<int>({3, 9, 7, 5}),
+          "waitlistOrder is highest priority first (CGPA tie: lower id first)");
+    check(e.waitlistSize() == 4, "reading the order removes nobody");
+}
+
 // ---------------- AVLTree ----------------
 
 static void testAvlStaysBalancedOnSortedInput() {
@@ -217,6 +229,7 @@ int main() {
     testZeroCapacityElectiveNeverHasSeat();
     testSeatOverflowThrows();
     testWaitlistPromotesHighestPriorityFirst();
+    testWaitlistOrderIsFrontFirst();
 
     testAvlStaysBalancedOnSortedInput();
     testAvlRemove();

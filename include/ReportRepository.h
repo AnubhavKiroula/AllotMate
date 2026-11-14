@@ -30,6 +30,14 @@ struct WaitlistRow {
     double cgpa;
 };
 
+// One elective a student is waiting for ("My Allotment Status" screen, FR-2).
+struct WaitingForRow {
+    std::string electiveName;
+    int choiceRank;    // the student's own rank for this elective (1 = first choice)
+    int position;      // place in that elective's waitlist (1 = next in line)
+    int waitingTotal;  // how many students wait for that elective
+};
+
 // Read-only SQL queries behind the CLI report screens (owned by the CLI
 // module). Keeping the SQL here means the CLI only formats rows and never
 // builds queries itself.
@@ -50,4 +58,7 @@ public:
 
     // An elective's waitlist, front of the line first.
     std::vector<WaitlistRow> waitlistFor(int electiveId);
+
+    // Every elective one student is waiting for, their best-ranked choice first.
+    std::vector<WaitingForRow> waitlistPositionsOf(const std::string& rollNo);
 };
