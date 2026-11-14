@@ -285,9 +285,11 @@ void CLI::viewPreferences() {
         std::string rollNo;
         std::cin >> rollNo;
 
-        // Look up student
+        // Look up student. quoteLiteral escapes the typed text, so input like
+        // ' OR '1'='1 is searched for literally instead of changing the query.
         pqxx::result student = db.executeQuery(
-            "SELECT student_id, name, cgpa FROM STUDENT WHERE roll_no = '" + rollNo + "';"
+            "SELECT student_id, name, cgpa FROM STUDENT WHERE roll_no = " +
+            db.quoteLiteral(rollNo) + ";"
         );
         if (student.empty()) {
             std::cout << "\n  [!] No student found with roll number: " << rollNo << "\n";
@@ -698,13 +700,15 @@ void CLI::viewStudentStatus() {
     std::cin >> rollNo;
 
     try {
+        // quoteLiteral escapes the typed text, so input like ' OR '1'='1
+        // cannot change the query and show another student's record.
         pqxx::result result = db.executeQuery(
             "SELECT s.name, s.roll_no, s.cgpa, s.branch, s.status, "
             "       e.name AS elective_name "
             "FROM STUDENT s "
             "LEFT JOIN ALLOTMENT a ON s.student_id = a.student_id "
             "LEFT JOIN ELECTIVE e  ON a.elective_id = e.elective_id "
-            "WHERE s.roll_no = '" + rollNo + "';"
+            "WHERE s.roll_no = " + db.quoteLiteral(rollNo) + ";"
         );
 
         if (result.empty()) {
