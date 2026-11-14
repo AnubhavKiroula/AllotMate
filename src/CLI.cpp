@@ -393,9 +393,12 @@ void CLI::runAllocation() {
 
 // -----------------------------------------------------------
 // printAllocationSummary() -- helper for runAllocation()
-// Prints the numbers returned by one allocation run.
+// Prints the numbers returned by one allocation run, including
+// the fairness report (FR-6) computed by MatchingEngine.
 // -----------------------------------------------------------
 void CLI::printAllocationSummary(const AllocationSummary& summary) const {
+    const FairnessReport& fairness = summary.fairness;
+
     std::cout << "\n  [OK] Allocation complete and saved to the database.\n";
     printSeparator();
     std::cout << "  Total students     : " << summary.totalStudents << "\n";
@@ -404,13 +407,23 @@ void CLI::printAllocationSummary(const AllocationSummary& summary) const {
     std::cout << "  Run ID (RUN_LOG)   : " << summary.runId << "\n";
     printSeparator();
 
+    std::cout << "  Fairness report\n";
+    std::cout << std::fixed << std::setprecision(1);
+    std::cout << "  First choice       : " << fairness.firstChoice << " students ("
+              << fairness.firstChoicePercent << "%)\n";
+    std::cout << std::setprecision(2);
+    std::cout << "  Average rank       : " << fairness.averageRank
+              << "  (1.00 = every matched student got their first choice)\n";
+    std::cout << "  Blocking pairs     : " << fairness.blockingPairs
+              << (fairness.blockingPairs == 0 ? "  (stable matching)\n" : "  (NOT stable)\n");
+    std::cout << std::defaultfloat << std::setprecision(6); // back to the default for other screens
+    printSeparator();
+
     // Unmatched students must be reported, never hidden (SRS edge cases 1 and 5).
     if (summary.unmatched > 0) {
         std::cout << "  Note: " << summary.unmatched
                   << " student(s) did not get any of their preferred electives.\n";
     }
-    std::cout << "  Fairness check (blocking pairs): pending -- detectBlockingPairs()\n";
-    std::cout << "  is still being implemented in MatchingEngine.\n";
 }
 
 // -----------------------------------------------------------

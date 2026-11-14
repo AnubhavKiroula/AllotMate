@@ -7,12 +7,6 @@
 #include <sstream>
 #include <vector>
 
-namespace {
-    // MatchingEngine::detectBlockingPairs() does not return a count yet, so the
-    // stability of a run is recorded as "not checked" (NULL), never as 0.
-    const int STABILITY_NOT_CHECKED = -1;
-}
-
 // ---- RunLock ----
 
 RunLock::RunLock(PostgresConnection& connection) : db(connection) {
@@ -113,16 +107,18 @@ AllocationSummary AllocationService::runAllocation(int coordinatorId, const std:
     engine.runGaleShapley();
 
     AllocationSummary summary;
+    summary.fairness = engine.generateFairnessReport();
     summary.totalStudents = static_cast<int>(students.size());
     summary.matched = saveResults(engine, round);
     summary.unmatched = summary.totalStudents - summary.matched;
 
+    const int blockingPairs = summary.fairness.blockingPairs;
     std::ostringstream outcome;
     outcome << round << ": " << summary.matched << " of " << summary.totalStudents
             << " students matched, " << summary.unmatched << " unmatched. "
-            << "Stability check not run yet (detectBlockingPairs pending).";
+            << "Blocking pairs found: " << blockingPairs << ".";
 
     RunLogRepository runLog(db);
-    summary.runId = runLog.logRun(coordinatorId, STABILITY_NOT_CHECKED, outcome.str());
+    summary.runId = runLog.logRun(coordinatorId, blockingPairs, outcome.str());
     return summary;
 }
