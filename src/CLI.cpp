@@ -1,4 +1,5 @@
 #include "CLI.h"
+#include "MeritRankingReport.h"
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -728,7 +729,9 @@ void CLI::runOOPDemoScreen() {
         std::cout << "  [1] Polymorphism Demo    (Person* -> Student/Coordinator)\n";
         std::cout << "  [2] Exception Hierarchy  (Throw & catch all 4 sub-types)\n";
         std::cout << "  [3] Operator Overloading (Compare students by CGPA)\n";
-        std::cout << "  [4] Back to Main Menu\n";
+        std::cout << "  [4] Threaded BST         (Merit ranking of live students)\n";
+        std::cout << "  [5] AVL Tree             (Waitlist promotion order)\n";
+        std::cout << "  [6] Back to Main Menu\n";
         printSeparator();
 
         int choice = getIntInput("  Enter demo: ");
@@ -736,7 +739,9 @@ void CLI::runOOPDemoScreen() {
             case 1: demoPolymorphism();        break;
             case 2: demoExceptionHierarchy();  break;
             case 3: demoOperatorOverloading(); break;
-            case 4: demoRunning = false;       break;
+            case 4: demoMeritRanking();        break;
+            case 5: demoAvlWaitlist();         break;
+            case 6: demoRunning = false;       break;
             default:
                 std::cout << "  [!] Invalid option.\n";
         }
@@ -869,6 +874,79 @@ void CLI::demoOperatorOverloading() {
     std::cout << "    2. Carol  (CGPA 9.5, ID 3) -- same CGPA, higher ID\n";
     std::cout << "    3. Bob    (CGPA 8.7, ID 2)\n";
 
+    waitForEnter();
+}
+
+// -----------------------------------------------------------
+// demoMeritRanking()
+// Loads every student from the database into a ThreadedBST and
+// prints the top 10 by merit. Main menu option [3] gets the same
+// order from SQL ORDER BY, so the two can be compared on screen.
+// -----------------------------------------------------------
+void CLI::demoMeritRanking() {
+    printHeader("Threaded BST Demo: Merit Ranking");
+    std::cout << "\n  Concept: students are inserted into a right-threaded BST ordered\n";
+    std::cout << "  by Student::operator< (CGPA, then lower ID). An empty right\n";
+    std::cout << "  pointer becomes a 'thread' to the inorder successor, so the\n";
+    std::cout << "  inorder walk needs no stack and no recursion.\n";
+    printSeparator();
+
+    try {
+        PostgresStudentRepo repo(db);
+        std::vector<Student> students = repo.findAll();
+        std::cout << "\n";
+        MeritRankingReport::print(students, 10);
+        std::cout << "\n  Same order as [3] View All Students, which sorts in SQL.\n";
+    } catch (const AllocationException::DatabaseException& e) {
+        std::cerr << "\n  [DB ERROR] " << e.what() << "\n";
+    }
+    waitForEnter();
+}
+
+// -----------------------------------------------------------
+// demoAvlWaitlist()
+// A full elective puts students on its AVL waitlist. Each freed
+// seat goes to the highest-priority student (extractMax), no
+// matter in which order the students joined.
+// -----------------------------------------------------------
+void CLI::demoAvlWaitlist() {
+    printHeader("AVL Tree Demo: Elective Waitlist");
+    std::cout << "\n  Concept: each Elective keeps its waitlist in an AVL tree ordered\n";
+    std::cout << "  by Student::operator< (CGPA, then lower ID). Rotations keep the\n";
+    std::cout << "  tree balanced, so insert and extractMax stay O(log n).\n";
+    printSeparator();
+
+    Elective elective(1, "Machine Learning", 1);
+    elective.allocateSeat();   // the only seat is already taken
+    std::cout << "\n  'Machine Learning' has 1 seat and it is taken.\n";
+    std::cout << "  Students join the waitlist in this order:\n";
+
+    Student joining[] = {
+        Student(7, "Kabir", 8.2f),
+        Student(9, "Neel",  9.4f),
+        Student(5, "Tara",  7.9f),
+        Student(3, "Isha",  9.4f)
+    };
+    for (const Student& s : joining) {
+        elective.addToWaitlist(s);
+        std::cout << "    + " << s.getName() << " (CGPA " << s.getCgpa()
+                  << ", ID " << s.getId() << ")\n";
+    }
+
+    std::cout << "\n  Seats are freed one at a time. promoteNext() gives each seat to:\n";
+    Student promoted(0, "", 0.0f);
+    int turn = 1;
+    while (elective.waitlistSize() > 0) {
+        elective.releaseSeat();
+        if (elective.promoteNext(promoted)) {
+            std::cout << "    " << turn << ". " << promoted.getName() << " (CGPA "
+                      << promoted.getCgpa() << ", ID " << promoted.getId() << ")\n";
+        }
+        turn++;
+    }
+
+    std::cout << "\n  Neel joined before Isha, but they tie on CGPA 9.4, so the\n";
+    std::cout << "  lower ID (Isha, 3) is promoted first.\n";
     waitForEnter();
 }
 

@@ -41,7 +41,7 @@ set_tests_properties(allocation PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DI
 # Data-structure demos (Member 2). They print a walkthrough for the viva and
 # are not tests, but CI compiles them so a change that breaks them fails the build.
 foreach(demo avl_demo avl_student_demo avl_rule5_demo elective_waitlist_demo
-             threaded_demo threaded_rule5_demo)
+             threaded_demo threaded_rule5_demo merit_ranking_demo)
     add_executable(${demo} ${demo}.cpp)
     target_link_libraries(${demo} PRIVATE allotmate_core)
     target_compile_options(${demo} PRIVATE ${ALLOTMATE_WARNINGS})
