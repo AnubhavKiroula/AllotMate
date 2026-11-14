@@ -992,6 +992,12 @@ int CLI::getIntInput(const std::string& prompt) const {
     int value = 0;
     std::cout << prompt;
     while (!(std::cin >> value)) {
+        // End of input (Ctrl+D / Ctrl+Z, or a piped file that ran out) can
+        // never become a number, so stop instead of asking forever. main()
+        // catches this, and the CLI's destructor still closes the connection.
+        if (std::cin.eof()) {
+            throw std::runtime_error("Input closed (end of file). Exiting AllotMate.");
+        }
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::cout << "  [!] Please enter a number: ";
