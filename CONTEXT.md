@@ -9,7 +9,7 @@ an interactive CLI. Academic PBL (DS + OOP) at ~1,500-student scale.
 
 ## Current objective
 Phase 3 (end-semester, 50 marks): final evaluation. All planned features are
-built; what remains is the team demo rehearsal and viva prep.
+built; what remains is the team demo rehearsal.
 
 ## Architecture (current)
 `main.cpp` → `CLI` → repositories / `AllocationService` → `PostgresConnection`
@@ -38,7 +38,7 @@ list/graph from our own nodes; our own `HashTable` instead of `unordered_*`.
   `test_models`, evaluator-mode DS demos in the CLI. PR #32–#41.
 - M1 (Anubhav): `AllocationService` + `RunLock`, `WaitlistRepository`, `ReportRepository`,
   merge sort, merge-join `findAll`, 1,500 scale seed, `benchmark_db`, `EXPLAIN`
-  profiling, `docs/PERFORMANCE.md`, Phase 3 guide.
+  profiling, `docs/PERFORMANCE.md`.
 - M3 (Gaurang): CLI screens Run Allocation (with fairness report), Results, Waitlist,
   CSV import; 1,500 load test.
 - Final phase: waitlists saved after every run (FR-7) and shown to students
@@ -48,8 +48,6 @@ list/graph from our own nodes; our own `HashTable` instead of `unordered_*`.
 ## Open work
 - **Team:** demo rehearsal on the demo laptop (fresh `docker compose down -v && up -d`).
 - **Team:** decide whether to drop the two redundant indexes (`docs/PERFORMANCE.md`).
-- **Deferred:** ML microservice (collusion check / demand forecast); no
-  past-semester data to train on.
 
 ## Important decisions
 - Repositories borrow a `PostgresConnection&`; SQL strings escaped with `quoteLiteral`.
