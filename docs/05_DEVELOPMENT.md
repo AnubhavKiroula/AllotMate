@@ -17,7 +17,7 @@
 ### Phase 1 — Design (Week 1)
 - Finalize this doc set (PRD, SRS, Architecture, UI/UX, Development).
 - Set up GitHub repo (private), branch protection on `main`, add all members as collaborators.
-- Set up Docker Compose for Postgres + ML service stub.
+- Set up Docker Compose for Postgres.
 - Agree on header-only interfaces: `Person.h`, `Repository.h`, `AllocationException.h`.
 
 **Exit criteria:** repo compiles an empty skeleton; Postgres container runs; every member has pulled and built successfully once.
@@ -35,10 +35,10 @@ Each owner builds independently against agreed interfaces (parallel work, minima
 
 | Owner | Builds |
 |---|---|
-| Member 1 (DS/Algorithm) | `SparseMatrix`, `HashTable`, `Stack`-based backtracking, `PriorityQueue`, core Gale-Shapley loop in `MatchingEngine` |
+| Member 4 (DS/Algorithm) | `SparseMatrix`, `HashTable`, `Stack`-based backtracking, `PriorityQueue`, core Gale-Shapley loop in `MatchingEngine` |
 | Member 2 (OOP) | Full `Student`/`Coordinator`/`Elective` behavior, operator overloads, exception classes, `AVLTree`/`ThreadedBST` for waitlist/reporting |
-| Member 3 (Backend/DB) | `PostgresStudentRepo` and other repo implementations, bulk CSV import at scale, indexing, `.env` config handling |
-| Member 4 (Integration/Testing/ML) | Unit test scaffolding, CLI skeleton (Section 2 of UI/UX doc), begin ML microservice stub in parallel (isolated, no dependency on core progress) |
+| Member 1 (Backend/DB) | `PostgresStudentRepo` and other repo implementations, bulk CSV import at scale, indexing, `.env` config handling |
+| Member 3 (Integration/Testing) | Unit test scaffolding, CLI skeleton (Section 2 of UI/UX doc) |
 
 **Exit criteria:** each module has passing unit tests in isolation; no module depends on another module's *implementation*, only its *interface*.
 
@@ -53,7 +53,6 @@ Each owner builds independently against agreed interfaces (parallel work, minima
 ### Phase 5 — Scale Test + Fairness Report (Week 7)
 - Load test at full 1500-student scale; record and document runtime.
 - Build the FCFS-vs-stable-matching comparison demo (see pitch doc) — run both on identical data, show blocking pairs found in FCFS vs 0 in AllotMate.
-- If time permits: connect ML microservice's forecast output into `elective.capacity` and demo the collusion-flagging endpoint.
 
 **Exit criteria:** system handles 1500-record run within acceptable demo time; comparison demo works reliably.
 
@@ -70,7 +69,7 @@ Each owner builds independently against agreed interfaces (parallel work, minima
 
 - `main` — always demo-stable, protected, merge via PR only.
 - `dev` — integration branch, where Phase 4+ work lands before `main`.
-- `feature/<member>-<module>` — individual work, e.g. `feature/m1-matching-engine`.
+- `feature/<member>-<module>` — individual work, e.g. `feature/m4-matching-engine`.
 - PR requires at least one other member's review before merging to `dev`.
 - Commit messages: `[module] short description` (e.g., `[matching-engine] implement stack-based backtracking`).
 
@@ -85,8 +84,8 @@ A module is "done," not just "written," when:
 
 ## 5. For AI Coding Tools Specifically
 
-- Always check `/INSTRUCTIONS/02_SRS.md` Section 4 (edge cases) before considering a function complete.
-- Always check `/INSTRUCTIONS/03_ARCHITECTURE.md` module boundaries before suggesting cross-module calls (e.g., never suggest calling Python directly from C++).
+- Always check `docs/02_SRS.md` Section 4 (edge cases) before considering a function complete.
+- Always check `docs/03_ARCHITECTURE.md` module boundaries before suggesting cross-module calls.
 - Prefer extending via interfaces over modifying existing class signatures — flag it explicitly if a signature change seems necessary.
 - Never introduce a new external library/dependency without flagging it to the team first — check Section 1 of the Architecture doc for the agreed stack.
 

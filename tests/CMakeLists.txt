@@ -1,4 +1,4 @@
-# Test targets for the Member 3 database layer.
+# Test targets for the Member 1 database layer.
 # Both link the shared core library and inherit its include paths / libpqxx link.
 
 # Pure-logic tests: CSV validation + capacity invariant. No database required,
@@ -15,7 +15,7 @@ target_link_libraries(test_models PRIVATE allotmate_core)
 target_compile_options(test_models PRIVATE ${ALLOTMATE_WARNINGS})
 add_test(NAME models COMMAND test_models)
 
-# Matching engine tests (Member 1). The source lives in src/, as written by its
+# Matching engine tests (Member 4). The source lives in src/, as written by its
 # owner; it is not part of allotmate_core because it has its own main().
 add_executable(MatchingEngineTest ${PROJECT_SOURCE_DIR}/src/MatchingEngineTest.cpp)
 target_link_libraries(MatchingEngineTest PRIVATE allotmate_core)

@@ -6,11 +6,11 @@
 
 ## 1. Purpose
 
-AllotMate exists to replace manual and first-come-first-serve (FCFS) elective/lab-batch allocation with a **provably fair, algorithmic allocation system**, built as a combined Data Structures (C) + Object-Oriented Programming (C++) academic project, with real institutional applicability.
+AllotMate exists to replace manual and first-come-first-serve (FCFS) elective allocation with a **provably fair, algorithmic allocation system**, built as a combined Data Structures (C) + Object-Oriented Programming (C++) academic project, with real institutional applicability.
 
 ## 2. Problem Statement
 
-Every semester, ~1500 students rank electives/lab batches by preference against limited seats. Current resolution methods are:
+Every semester, ~1500 students rank electives by preference against limited seats. Current resolution methods are:
 - **Manual allocation** — slow, inconsistent, prone to human bias.
 - **FCFS** — rewards speed/luck over fairness, provides no guarantee that the final allocation is optimal or stable for both sides.
 
@@ -23,7 +23,6 @@ A **stable-matching allocation engine** (Gale-Shapley algorithm, student-proposi
 - Produces a final allocation that is **provably stable** (no blocking pairs).
 - Persists all data in PostgreSQL for real semester-to-semester use.
 - Provides a fairness verification report after every run.
-- Optionally forecasts elective demand and flags suspicious preference patterns via an isolated ML microservice.
 
 ## 4. Who This Is For
 
@@ -39,12 +38,10 @@ A **stable-matching allocation engine** (Gale-Shapley algorithm, student-proposi
 - Demonstrate deep, real (non-STL-shortcut) implementation of DS concepts from the syllabus.
 - Demonstrate clean OOP architecture (SOLID, inheritance, polymorphism, exceptions) in C++.
 - Be usable at real scale (1500 students) — not a toy demo.
-- Be modular enough that ML forecasting can be added without touching the core engine.
 
 ## 6. Non-Goals (explicitly out of scope for the core)
 
 - Building a full production-grade multi-tenant SaaS system.
-- Deep learning / NLP in the ML add-on — kept intentionally simple and justifiable.
 - Handling authentication/security to enterprise standard (see Architecture doc for the minimal approach we're taking and why).
 - Mobile app or complex web frontend — CLI is the core interface; web/dashboard is optional stretch (see UI/UX doc).
 

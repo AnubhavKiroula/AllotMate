@@ -38,7 +38,7 @@
 ## 📌 Problem & Solution Overview
 
 - **The Problem:** Every semester, 1,500+ students rank elective courses against strict seat limits. Existing manual or First-Come-First-Serve (FCFS) allocations reward speed or luck, are vulnerable to human bias, and offer **no stability guarantee** (students and electives may form blocking pairs who both prefer to swap).
-- **The Solution:** **AllotMate** adapts the **Gale–Shapley stable matching algorithm** (student-proposing variant) with seat capacities, custom data structures (Sparse Matrix, Priority Queue, AVL Trees, Threaded BST, Hash Tables), an RAII-compliant PostgreSQL persistence layer via `libpqxx`, and an optional decoupled ML forecasting microservice.
+- **The Solution:** **AllotMate** adapts the **Gale–Shapley stable matching algorithm** (student-proposing variant) with seat capacities, custom data structures (Sparse Matrix, Priority Queue, AVL Trees, Threaded BST, Hash Tables), and an RAII-compliant PostgreSQL persistence layer via `libpqxx`.
 
 ---
 
@@ -64,7 +64,6 @@
 | **Build System** | CMake 3.16+ | Multi-platform build and compiler warning gates |
 | **CI / Quality Gate** | GitHub Actions | Automated build verification on `main` and `dev` |
 | **DB Inspection GUI** | pgAdmin 4 | Visual table inspection and query evaluation |
-| **ML Microservice (Optional)** | Python (FastAPI / scikit-learn) | Isolated elective demand forecasting & collusion detection |
 
 ---
 
@@ -74,7 +73,7 @@
 |---|---|---|---|---|
 | **Persistence & DB Layer** | **Member 1 — Anubhav Kiroula** (Team Lead · Backend & DB) | Sorting (bulk import), Indexing structures | RAII, Repository Pattern (`Repository<T>`), Connection Pool | **Joint Evaluator** |
 | **Domain Models & Trees** | **Member 2 — Kritika Mundepi** (OOP Architect) | AVL Tree, Threaded BST, Hashing | Inheritance, Polymorphism, Operator Overloading | **OOP Evaluator** |
-| **Integration, CLI & ML** | **Member 3 — Gaurang Nauriyal** (Integration / ML) | Graph/Cluster analysis (collusion check) | Unit testing, Microservice REST isolation | **Panel Review** |
+| **Integration, CLI & Testing** | **Member 3 — Gaurang Nauriyal** (Integration & CLI) | — | Single Responsibility (CLI only does I/O), integration & load testing | **Panel Review** |
 | **Matching Engine** | **Member 4 — Dhruv Negi** (DS / Algorithm Lead) | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, Custom exceptions | **DS Evaluator** |
 
 ---
@@ -156,36 +155,21 @@ The program will launch an interactive terminal menu. Choose `[1] Coordinator` t
 
 ---
 
-## 🧭 Status & Viva Prep — per Member
+## 👥 Team & Contributions
 
-> **Team STL rule** (also in `CLAUDE.md`): `vector`, `string`, streams, smart pointers, `map` and `set` are fine (OOP Unit 5). DS logic from the lectures must be **hand-written**: no `std::sort`, `<stack>`, `<queue>`, `std::priority_queue` or `std::list` in project logic, BST/AVL/linked list/graph built from our own nodes, and our own `HashTable` instead of `unordered_map`/`unordered_set`.
-
-All planned features are built and merged. What remains for everyone is the **team demo rehearsal** on the demo laptop, starting from a fresh database: `docker compose down -v && docker compose up -d`.
+> **Hand-written data structures:** `vector`, `string`, streams, smart pointers, `map` and `set` are used where allowed (OOP Unit 5). Everything from the DS syllabus is our own code: no `std::sort`, `<stack>`, `<queue>`, `std::priority_queue` or `std::list` in project logic, trees built from our own nodes, and our own `HashTable` instead of `unordered_map`/`unordered_set`.
 
 ### Member 1 — Anubhav Kiroula (Team Lead · Backend & DB)
-> ✅ **Done:** PostgreSQL schema, RAII connection, repositories, CSV bulk import (merge sort), `AllocationService` (one transaction, advisory-lock `RunLock`, `RUN_LOG` audit), 1,500-scale profiling, waitlists saved with every run and shown to students (FR-7, FR-2), SQL-injection fix in the CLI.
-
-Remaining: with team agreement, drop the two redundant indexes found by profiling (see `docs/PERFORMANCE.md`).
+PostgreSQL schema, RAII connection, repositories, CSV bulk import (merge sort), `AllocationService` (one transaction, advisory-lock `RunLock`, `RUN_LOG` audit), waitlists saved with every run and shown to students (FR-7, FR-2), 1,500-scale profiling ([`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)).
 
 ### Member 2 — Kritika Mundepi (OOP Architect)
-> ✅ **Done:** `Person` polymorphism, `AVLTree` and `ThreadedBST` from our own nodes with Rule of 5, AVL waitlist in `Elective`, `MeritRankingReport`, `test_models`.
+`Person` hierarchy and polymorphism, exception hierarchy, `AVLTree` and `ThreadedBST` from our own nodes with Rule of 5, the AVL waitlist in `Elective`, `MeritRankingReport`, model unit tests.
 
-Viva prep: AVL rotations (LL/RR/LR/RL) and why the waitlist stays O(log n); how the right threads replace the stack in the in-order walk; why a plain threaded BST degrades on sorted input while the AVL tree does not. Evaluator mode `[4]` and `[5]` show both trees live.
-
-### Member 3 — Gaurang Nauriyal (Integration / ML)
-> ✅ **Done:** CLI screens Run Allocation (with the fairness report), View Results, View Waitlist and Import CSV, plus the 1,500 × 30 load test ([`docs/LOAD-TEST.md`](docs/LOAD-TEST.md)).
-
-The ML microservice stays deferred (no past-semester data to train on).
+### Member 3 — Gaurang Nauriyal (Integration & CLI)
+CLI screens Run Allocation (with the fairness report), View Results, View Waitlist and Import CSV, plus the 1,500 × 30 load test ([`docs/LOAD-TEST.md`](docs/LOAD-TEST.md)).
 
 ### Member 4 — Dhruv Negi (DS / Algorithm Lead)
-> ✅ **Done:** `SparseMatrix`, `HashTable` (rehash at load factor 0.7), own-storage `Stack`, `PriorityQueue`, the Gale–Shapley loop, `detectBlockingPairs()`, `FairnessReport` and the FCFS vs Gale–Shapley benchmark.
-
-Viva prep:
-- Why a Gale–Shapley result has **0 blocking pairs**, and why a zero-capacity elective can never form one.
-- How `countBlockingPairs()` stays O(students × preferences): one pass records each elective's lowest-priority holder.
-- The benchmark story: same 74% first-choice rate, but FCFS leaves 1,336 justified complaints.
-- Complexity of the matching loop, the heap, the sparse matrix, and `HashTable::rehash()` (why 0.7, why every key is re-hashed).
-- The `Stack` Rule of 5 and placement `new` (and why a moved-from stack restarts at capacity 10).
+`SparseMatrix`, `HashTable` (rehash at load factor 0.7), `Stack`, `PriorityQueue`, the Gale–Shapley loop, `detectBlockingPairs()`, `FairnessReport` and the FCFS vs Gale–Shapley benchmark (FCFS 1,336 blocking pairs vs 0 on 1,500 students).
 
 ---
 
@@ -204,9 +188,6 @@ AllotMate/
 │   ├── 04_UIUX.md
 │   ├── 05_DEVELOPMENT.md
 │   ├── 06_VERSION-CONTROL.md
-│   ├── 07_PHASE-1-EVALUATION-GUIDE.md
-│   ├── 08_PHASE-2-EVALUATION-GUIDE.md
-│   ├── 09_PHASE-3-EVALUATION-GUIDE.md
 │   ├── DB-SETUP.md              # Database & pgAdmin setup guide
 │   ├── LOAD-TEST.md             # 1,500 x 30 load test through the CLI
 │   └── PERFORMANCE.md           # Measured 1,500-scale benchmarks & EXPLAIN plans
@@ -281,17 +262,8 @@ AllotMate/
 ├── CONTEXT.md                   # Living project state
 ├── docker-compose.yml           # PostgreSQL 16 container definition
 ├── LICENSE                      # MIT License
-└── README.md                    # Root project overview & task tracker
+└── README.md                    # Project overview
 ```
-
----
-
-## 🛡️ Development & Version Control Standards
-
-- **SOLID Principles:** Single responsibility per module, open for extension via interfaces (`Repository<T>`), Liskov substitutability on `Person`, and dependency inversion.
-- **Fail Loud & RAII:** No silent errors or manual memory/connection cleanup. All failures throw `AllocationException` subclasses.
-- **Conventional Commits:** All team commits follow `<type>: <description>` format (`feat`, `fix`, `docs`, `build`, `ci`, `refactor`, `test`).
-- **Branch-per-Feature:** Code lands via PRs into `main`/`dev` with automated CI verification.
 
 ---
 
