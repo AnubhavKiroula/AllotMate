@@ -16,17 +16,27 @@ This is primarily a **backend/algorithm-focused academic project**. The interfac
 Since there's no GUI, "screens" here means **distinct CLI menu states**. Each should be a clear, numbered prompt.
 
 ### 2.1 Main Menu
+As implemented in `src/CLI.cpp`:
 ```
-=== AllotMate ===
-1. Import student/elective data (CSV)
-2. Set elective capacities
-3. Submit/view student preferences
-4. Run allocation
-5. View fairness report
-6. View allotment results
-7. View waitlist
-8. (Optional) View ML demand forecast
-9. Exit
+Login as:
+  [1] Coordinator (full admin access)
+  [2] Student     (view own allotment status)
+
+=== Coordinator Menu ===
+[1] View Electives & Seat Availability
+[2] Update Elective Seat Capacity
+[3] View All Students
+[4] View Student Preferences
+[5] Run Allocation (Gale-Shapley)      -> ends with the fairness report
+[6] View Allotment Results
+[7] View Waitlist
+[8] Import Students from CSV
+[0] OOP & DS Concepts Demo (Evaluator Mode)
+[9] Exit
+
+=== Student Menu ===
+[1] View My Allotment Status           -> allotment + waitlist positions
+[2] Exit
 ```
 
 ### 2.2 Flow Diagram
@@ -40,7 +50,6 @@ flowchart TD
     A --> F[View Fairness Report]
     A --> G[View Allotment Results]
     A --> H[View Waitlist]
-    A --> I[ML Forecast - optional]
 
     B --> A
     C --> A
@@ -49,7 +58,6 @@ flowchart TD
     F --> G
     G --> A
     H --> A
-    I --> C
 ```
 
 **Rationale for the flow:** Running allocation (E) automatically leads into the fairness report (F) — this is deliberate, since the fairness proof (see project design doc, Section on proving Gale-Shapley) should never be a separate, skippable step. It's shown immediately as part of the result, reinforcing the core pitch every time the system runs.
@@ -74,7 +82,7 @@ Coordinator gets the full menu above; Student gets a reduced menu (view own stat
 |---|---|
 | Login | Coordinator auth (see Architecture doc, Section 4) |
 | Dashboard | Summary: total students, electives, last run status, blocking pairs = 0 badge |
-| Capacities | Table to set/edit elective seat counts (optionally pre-filled from ML forecast) |
+| Capacities | Table to set/edit elective seat counts |
 | Run Allocation | Single button, triggers backend run, shows loading + result |
 | Results | Table of final allotments, filter by elective/branch |
 | Waitlist | Per-elective waitlist view |

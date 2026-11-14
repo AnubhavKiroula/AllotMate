@@ -76,15 +76,6 @@ AllotMate_Viva_*.pdf
 .env
 .env.local
 
-# Python (ml-service, future)
-__pycache__/
-*.pyc
-*.pyo
-venv/
-.venv/
-*.egg-info/
-.pytest_cache/
-
 # IDE / editor
 .vscode/
 .idea/

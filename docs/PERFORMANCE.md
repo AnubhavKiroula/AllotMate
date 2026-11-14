@@ -1,4 +1,4 @@
-# Performance — 1,500-Student Scale (Member 3)
+# Performance — 1,500-Student Scale (Member 1)
 
 Measured numbers from real runs, not estimates. The dataset comes from
 `scripts/scale_seed_1500.sql`, the timings from `tools/benchmark_db.cpp`, and the

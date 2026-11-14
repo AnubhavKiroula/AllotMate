@@ -34,11 +34,11 @@ public:
 
 // Runs a complete allocation: database -> MatchingEngine -> database.
 //
-//   1. lock      : refuse to start if another run is in progress (SRS #10)
+//   1. lock      : refuse to start if another run is in progress (SRS #9)
 //   2. re-run    : refuse to overwrite an existing round unless the coordinator
 //                  explicitly allows it (SRS #7 -- never silently overwrite)
 //   3. load      : students + electives through the repositories
-//   4. match     : Gale-Shapley via MatchingEngine (Member 1's module)
+//   4. match     : Gale-Shapley via MatchingEngine (Member 4's module)
 //   5. save      : allotments, statuses and seat counts in ONE transaction
 //   6. audit     : append a RUN_LOG row describing the outcome
 class AllocationService {
