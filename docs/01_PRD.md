@@ -58,4 +58,4 @@ For the UML class diagram, ER diagram, SOLID principle mapping, and the full pit
 **`00_PROJECT-OVERVIEW-AND-DIAGRAMS.md`**
 ---
 
-**Any team member or AI tool proposing a new feature must check it against Sections 5 and 6 before implementing it.**
+**Any team member proposing a new feature must check it against Sections 5 and 6 before implementing it.**

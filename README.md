@@ -74,7 +74,7 @@
 | **Persistence & DB Layer** | **Member 1 — Anubhav Kiroula** (Team Lead · Backend & DB) | Sorting (bulk import), Indexing structures | RAII, Repository Pattern (`Repository<T>`), Connection Pool | **Joint Evaluator** |
 | **Domain Models & Trees** | **Member 2 — Kritika Mundepi** (OOP Architect) | AVL Tree, Threaded BST, Hashing | Inheritance, Polymorphism, Operator Overloading | **OOP Evaluator** |
 | **Integration, CLI & Testing** | **Member 3 — Gaurang Nauriyal** (Integration & CLI) | — | Single Responsibility (CLI only does I/O), integration & load testing | **Panel Review** |
-| **Matching Engine** | **Member 4 — Dhruv Negi** (DS / Algorithm Lead) | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, Custom exceptions | **DS Evaluator** |
+| **Matching Engine** | **Member 4 — Dhruv Negi** (DS / Algorithm Lead) | Priority Queue, Stack, Sparse Matrix, Hash Table | Templates, Rule of 5 (`Stack`), Custom exceptions | **DS Evaluator** |
 
 ---
 
@@ -257,9 +257,7 @@ AllotMate/
 │   └── students_sample.csv      # Example bulk-import file
 ├── .env.example                 # Environment configuration template
 ├── .gitignore                   # Git ignore rules
-├── CLAUDE.md                    # Team coding conventions (incl. STL rule)
 ├── CMakeLists.txt               # CMake build configuration
-├── CONTEXT.md                   # Living project state
 ├── docker-compose.yml           # PostgreSQL 16 container definition
 ├── LICENSE                      # MIT License
 └── README.md                    # Project overview

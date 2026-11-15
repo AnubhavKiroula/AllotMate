@@ -22,9 +22,9 @@
 
 | Module | Owner | Core DS used | Core OOP used |
 |---|---|---|---|
-| Matching Engine | Member 4 | Priority Queue, Stack (backtracking), Sparse Matrix | Strategy pattern, exceptions |
+| Matching Engine | Member 4 | Priority Queue, Stack, Sparse Matrix, Hash Table | Templates, Rule of 5 (`Stack`), exceptions |
 | Domain Models | Member 2 | — | Inheritance, polymorphism, operator overloading |
-| Waitlist & Reporting | Member 2/4 | AVL Tree, Threaded BST, Hashing | Templates, iterators |
+| Waitlist & Reporting | Member 2 | AVL Tree, Threaded BST | Templates, Rule of 5 |
 | Persistence Layer | Member 1 | Sorting (bulk import) | RAII, Repository pattern |
 | Integration/Testing/Docs | Member 3 | — | Unit tests, benchmarks |
 
@@ -62,10 +62,11 @@ classDiagram
         -int id
         -string name
         -int capacity
-        -PriorityQueue~Student~ waitlist
+        -AVLTree~Student~ waitlist
         +hasSeat() bool
         +addToWaitlist(Student s)
-        +operator<(Elective other) bool
+        +promoteNext(Student promoted) bool
+        +waitlistOrder() vector~int~
     }
 
     class SparseMatrix {
@@ -75,23 +76,25 @@ classDiagram
     }
 
     class HashTable~K,V~ {
-        -vector~Bucket~ table
+        -vector~Entry~ table
         +insert(K key, V val)
         +find(K key) V
+        +contains(K key) bool
         +remove(K key)
     }
 
     class AVLTree~T~ {
-        -Node~T~* root
+        -Node* root
         +insert(T val)
-        +rebalance(Node~T~* node)
-        +inorderTraverse()
+        +remove(T val) bool
+        +extractMax(T out) bool
+        +inorder(visit)
     }
 
     class ThreadedBST~T~ {
-        -ThreadedNode~T~* root
+        -Node* root
         +insert(T val)
-        +inorderTraverse() : no-stack
+        +inorder(visit) : no stack
     }
 
     class MatchingEngine {
@@ -99,9 +102,11 @@ classDiagram
         -SparseMatrix prefMatrix
         -HashTable~int,Student~ studentIndex
         -HashTable~int,Elective~ electiveIndex
+        +loadData(students, electives)
         +runGaleShapley()
-        +detectBlockingPairs() vector
-        +generateFairnessReport()
+        +detectBlockingPairs() int
+        +generateFairnessReport() FairnessReport
+        +buildWaitlists() vector~Elective~
     }
 
     class AllocationException {
@@ -129,20 +134,23 @@ classDiagram
     Person <|-- Coordinator
     MatchingEngine --> SparseMatrix
     MatchingEngine --> HashTable
+    MatchingEngine --> Stack : students still to place
+    MatchingEngine --> PriorityQueue : ranks a full elective
     MatchingEngine --> AllocationException : throws
-    Elective --> "1" AVLTree : waitlist backup
-    MatchingEngine --> ThreadedBST : report generation
+    Elective --> "1" AVLTree : waitlist
+    MeritRankingReport --> ThreadedBST : merit ranking
     Repository <|.. PostgresStudentRepo
-    MatchingEngine --> Repository : uses (DIP)
+    AllocationService --> PostgresStudentRepo : loads students
+    AllocationService --> MatchingEngine : runs
     Student "many" --> "many" Elective : preferences
 ```
 
-**SOLID touchpoints already baked in:**
-- **S**: `MatchingEngine` only matches; `Repository` only persists; `Student`/`Elective` only hold state.
-- **O**: New allocation strategies (e.g. merit-weighted) extend via a `Strategy` interface, no engine edits.
+**SOLID touchpoints:**
+- **S**: `MatchingEngine` only matches; the repositories only persist; `AllocationService` only orchestrates a run; `Student`/`Elective` hold state.
+- **O**: New exception types extend `AllocationException`, and a new storage back-end implements `Repository<T>`, without editing existing callers.
 - **L**: `Student`/`Coordinator` are substitutable wherever `Person*` is expected.
-- **I**: Separate `Repository<Student>` vs `Repository<Elective>`, no fat interfaces.
-- **D**: `MatchingEngine` depends on `Repository` abstraction, not `PostgresStudentRepo` directly — swap DB layer without touching logic.
+- **I**: Separate `Repository<Student>` vs `Repository<Elective>`; `RunLogRepository` is a separate class with only the methods it needs, so there are no fat interfaces.
+- **D**: `MatchingEngine` has no database dependency at all: it receives plain `vector<Student>` / `vector<Elective>` through `loadData()`, so the DB layer can change without touching the algorithm.
 
 ---
 
@@ -222,7 +230,7 @@ erDiagram
 | **1. Design** | This doc finalized, Git repo + branch structure, CMake skeleton compiling empty modules | 1 |
 | **2. Boilerplate** | `Person`/`Student`/`Coordinator`/`Elective` classes, empty `MatchingEngine`, DB schema created + migrations, dummy data seeded (100 → 1500 records) | 2 |
 | **3. Modular build** | Each owner implements their DS class independently against agreed interfaces; unit tests per module | 3–5 |
-| **4. Integration** | Wire `MatchingEngine` to `Repository`, run Gale-Shapley end-to-end on seeded data, fix mismatches | 6 |
+| **4. Integration** | Wire `MatchingEngine` to the repositories through `AllocationService`, run Gale-Shapley end-to-end on seeded data, fix mismatches | 6 |
 | **5. Scale test + fairness report** | Load-test at 1500 students, benchmark runtime, blocking-pair detection report | 7 |
 | **6. Polish + docs + viva prep** | CLI/dashboard, README, architecture writeup, rehearse both evaluator narratives | 8 |
 
